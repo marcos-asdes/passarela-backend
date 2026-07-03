@@ -1,0 +1,53 @@
+{
+  "name": "passarela-backend",
+  "version": "0.1.0",
+  "description": "Passarela — MVP de plataforma de ofertas relâmpago para lojistas e compradores de shopping centers. Backend NestJS com arquitetura DDD.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "nest build",
+    "start": "cross-env NODE_OPTIONS=\"-r tsconfig-paths/register\" TS_NODE_BASE_URL=./dist nest start -b swc",
+    "start:dev": "cross-env NODE_OPTIONS=\"-r tsconfig-paths/register\" TS_NODE_BASE_URL=./dist nest start -b swc --watch",
+    "start:debug": "cross-env NODE_OPTIONS=\"-r tsconfig-paths/register\" TS_NODE_BASE_URL=./dist nest start -b swc --watch --debug",
+    "start:prod": "cross-env NODE_OPTIONS=\"-r tsconfig-paths/register\" TS_NODE_BASE_URL=./dist node dist/src/main.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage",
+    "format": "prettier --write \"src/**/*.ts\" \"__tests__/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"__tests__/**/*.ts\"",
+    "lint": "eslint \"src/**/*.ts\" \"__tests__/**/*.ts\" --fix"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.1.27",
+    "@nestjs/core": "^11.1.27",
+    "@nestjs/platform-express": "^11.1.27",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "tsconfig-paths": "^4.2.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@nestjs/cli": "^11.0.23",
+    "@nestjs/schematics": "^11.1.0",
+    "@nestjs/testing": "^11.1.27",
+    "@swc/cli": "^0.8.1",
+    "@swc/core": "^1.15.43",
+    "@swc/jest": "^0.2.39",
+    "@types/express": "^5.0.6",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^26.1.0",
+    "chokidar": "^5.0.0",
+    "cross-env": "^10.1.0",
+    "eslint": "^10.6.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.6",
+    "jest": "^30.4.2",
+    "prettier": "^3.9.4",
+    "source-map-support": "^0.5.21",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.62.1"
+  }
+}

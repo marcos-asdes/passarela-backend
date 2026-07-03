@@ -1,0 +1,30 @@
+# Define quebras de linha consistentes para CRLF
+* text=auto eol=crlf
+
+# Arquivos de código sempre CRLF
+*.ts text eol=crlf
+*.tsx text eol=crlf
+*.js text eol=crlf
+*.jsx text eol=crlf
+*.json text eol=crlf
+*.md text eol=crlf
+*.html text eol=crlf
+*.css text eol=crlf
+*.scss text eol=crlf
+
+# Arquivos de configuração sempre CRLF
+*.yml text eol=crlf
+*.yaml text eol=crlf
+*.xml text eol=crlf
+
+# Arquivos binários
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary

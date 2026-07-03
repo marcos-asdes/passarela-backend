@@ -1,0 +1,32 @@
+services:
+  api:
+    build:
+      context: .
+      target: development
+    container_name: passarela-api
+    ports:
+      - "3000:${PORT:-3000}"
+    env_file:
+      - .env
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+    volumes:
+      - ./src:/usr/src/app/src
+      - ./__tests__:/usr/src/app/__tests__
+      - ./tsconfig.json:/usr/src/app/tsconfig.json
+      - ./tsconfig.build.json:/usr/src/app/tsconfig.build.json
+      - ./nest-cli.json:/usr/src/app/nest-cli.json
+      - ./jest.config.ts:/usr/src/app/jest.config.ts
+      - ./.swcrc:/usr/src/app/.swcrc
+      - node_modules:/usr/src/app/node_modules
+    command: npm run start:dev
+    networks:
+      - passarela-network
+
+networks:
+  passarela-network:
+    driver: bridge
+
+volumes:
+  node_modules:
