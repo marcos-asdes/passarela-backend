@@ -1,8 +1,6 @@
 # Passarela (backend) — Guia do Projeto
 
-Backend do **Passarela**, MVP de uma plataforma onde lojistas de um shopping publicam ofertas relâmpago e compradores acompanham em tempo real as promoções ativas, podendo expressar interesse. Projeto desenvolvido para um desafio técnico de vaga (dev fullstack pleno) — ver `desafio-full.md` na raiz para o enunciado original.
-
-Este repositório é **independente** do projeto Ludora (outra plataforma, de jogos), mas reaproveita deliberadamente a mesma base de tooling/arquitetura já validada lá (NestJS + DDD + SWC + Jest + Docker), por ser uma configuração comprovada e não um experimento novo.
+Backend do **Passarela**, MVP de uma plataforma onde lojistas de um shopping publicam ofertas relâmpago e compradores acompanham em tempo real as promoções ativas, podendo expressar interesse. Projeto desenvolvido para um desafio técnico de vaga (dev fullstack pleno).
 
 ## Índice
 
@@ -23,10 +21,10 @@ Este primeiro commit traz **só o esqueleto técnico**: tooling (lint, prettier,
 
 Ordem planejada dos próximos commits incrementais (não implementado ainda, só para orientar decisões de estrutura):
 1. Kernel compartilhado (config via `@nestjs/config`, conexão MongoDB, segurança — helmet/CORS/throttler —, filtro de exceção global), no mesmo espírito do `src/shared`/`src/database`/`src/config` do Ludora.
-2. Bounded context `auth` — registro/login de `lojista` e `comprador`, JWT.
-3. Bounded context `ofertas` — CRUD de ofertas pelo lojista, endpoint público de listagem/filtro por status.
-4. Bounded context `interesse` — comprador registra interesse, decremento de estoque.
-5. Gateway WebSocket — notifica compradores conectados quando uma nova oferta é publicada.
+2. Bounded context `auth` — registro/login de `merchant` e `shopper`, JWT.
+3. Bounded context `offers` — CRUD de offers pelo merchant, endpoint público de listagem/filtro por status.
+4. Bounded context `interest` — shopper registra interest, decremento de estoque.
+5. Gateway WebSocket — notifica shoppers conectados quando uma nova offer é publicada.
 
 Ao adicionar cada um desses, replicar a arquitetura DDD de 4 camadas descrita abaixo e atualizar a tabela de path aliases.
 
@@ -57,7 +55,7 @@ Mesmo racional documentado lá: NestJS 11/CommonJS (não v12/ESM ainda), Jest + 
 
 Mesmo padrão do Ludora: cada bounded context é um módulo Nest com 4 camadas, sempre na mesma ordem de dependência (uma camada só pode depender das que vêm antes dela nesta lista):
 
-1. **`domain/`** — entidades e value objects. TypeScript puro, zero import de Nest/Mongoose/qualquer framework. Só regra de negócio (ex.: uma `Oferta` não pode ter estoque negativo).
+1. **`domain/`** — entidades e value objects. TypeScript puro, zero import de Nest/Mongoose/qualquer framework. Só regra de negócio (ex.: uma `Offer` não pode ter estoque negativo).
 2. **`application/`** — casos de uso (use cases) e as portas (interfaces) que eles precisam. Conhece `domain/`, nunca conhece `infrastructure/` diretamente — depende só das interfaces que ela mesma declara.
 3. **`infrastructure/`** — implementação das portas declaradas em `application/`. É a única camada que sabe que o banco é MongoDB/Mongoose.
 4. **`interface/`** — controllers HTTP, gateways WebSocket, DTOs de entrada/saída. Fala só com `application/` (use cases), nunca importa `infrastructure/` diretamente.
@@ -74,7 +72,7 @@ Zero imports relativos em todo o projeto (`src/` e `__tests__/`) — sempre via 
 |---|---|
 | `@app/*` | `src/*` (arquivos soltos na raiz: `main.ts`, `app.module.ts`, `app.controller.ts`, `types.ts`) |
 
-Conforme bounded contexts forem criados (`auth`, `ofertas`, `interesse`, etc.), cada um ganha seu próprio alias (ex.: `@auth/*`, `@ofertas/*`) — um por contexto, não um `@modules/*` genérico, pelo mesmo motivo do Ludora: torna violação de fronteira entre contextos visível no import.
+Conforme bounded contexts forem criados (`auth`, `offers`, `interest`, etc.), cada um ganha seu próprio alias (ex.: `@auth/*`, `@offers/*`) — um por contexto, não um `@modules/*` genérico, pelo mesmo motivo do Ludora: torna violação de fronteira entre contextos visível no import.
 
 **Definido em dois lugares que precisam ficar sincronizados manualmente**: `tsconfig.json` (`compilerOptions.paths`) e `jest.config.ts` (`moduleNameMapper`). Ao adicionar/renomear/remover um alias, atualizar os dois.
 
