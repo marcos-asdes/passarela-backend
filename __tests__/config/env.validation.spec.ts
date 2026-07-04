@@ -11,6 +11,8 @@
  * - MONGODB_URI ausente ou vazia lança erro
  * - CORS_ORIGIN que não é uma URL válida lança erro
  * - THROTTLE_TTL / THROTTLE_LIMIT ausentes ou não inteiros lançam erro
+ * - JWT_SECRET ausente ou com menos de 32 caracteres lança erro
+ * - JWT_EXPIRES_IN ausente ou vazio lança erro
  * - Mensagem de erro sempre inclui o prefixo "Configuração de ambiente inválida"
  */
 
@@ -23,7 +25,9 @@ const validConfig: Record<string, unknown> = {
   MONGODB_URI: 'mongodb://user:pass@mongo:27017/passarela?authSource=admin',
   CORS_ORIGIN: 'http://localhost:3000',
   THROTTLE_TTL: '60000',
-  THROTTLE_LIMIT: '100'
+  THROTTLE_LIMIT: '100',
+  JWT_SECRET: 'segredo-de-teste-com-32-caracteres-ou-mais',
+  JWT_EXPIRES_IN: '1h'
 }
 
 /** Copia validConfig sem a chave informada, pra testar o comportamento de uma variável ausente */
@@ -112,6 +116,28 @@ describe('validateEnv', () => {
 
     it('lança erro quando THROTTLE_LIMIT não é inteiro', () => {
       expect(() => validateEnv({ ...validConfig, THROTTLE_LIMIT: '1.5' })).toThrow('Configuração de ambiente inválida')
+    })
+  })
+
+  describe('JWT_SECRET inválido', () => {
+    it('lança erro quando ausente', () => {
+      expect(() => validateEnv(withoutKey('JWT_SECRET'))).toThrow('Configuração de ambiente inválida')
+    })
+
+    it('lança erro quando tem menos de 32 caracteres', () => {
+      expect(() => validateEnv({ ...validConfig, JWT_SECRET: 'curto-demais' })).toThrow(
+        'Configuração de ambiente inválida'
+      )
+    })
+  })
+
+  describe('JWT_EXPIRES_IN inválido', () => {
+    it('lança erro quando ausente', () => {
+      expect(() => validateEnv(withoutKey('JWT_EXPIRES_IN'))).toThrow('Configuração de ambiente inválida')
+    })
+
+    it('lança erro quando vazio', () => {
+      expect(() => validateEnv({ ...validConfig, JWT_EXPIRES_IN: '' })).toThrow('Configuração de ambiente inválida')
     })
   })
 })

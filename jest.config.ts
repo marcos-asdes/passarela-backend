@@ -31,7 +31,8 @@ const config: Config = {
     '^@database$': '<rootDir>/src/database',
     '^@database/(.*)$': '<rootDir>/src/database/$1',
     '^@shared$': '<rootDir>/src/shared',
-    '^@shared/(.*)$': '<rootDir>/src/shared/$1'
+    '^@shared/(.*)$': '<rootDir>/src/shared/$1',
+    '^@auth/(.*)$': '<rootDir>/src/modules/auth/$1'
   },
   collectCoverageFrom: ['src/**/*.ts', '!src/main.ts', '!src/**/types.ts', '!src/**/*.module.ts'],
   coverageDirectory: './coverage',

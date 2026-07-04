@@ -3,12 +3,13 @@
  *
  * Cenários testados:
  * - Retorna { statusCode, message } genérico ao cliente para uma HttpException conhecida (ex.: 404)
+ * - Retorna { statusCode: 409, message } genérico ao cliente para um conflito (ex.: e-mail/CPF duplicado)
  * - Retorna { statusCode: 500, message } genérico ao cliente para um erro não-HTTP (Error cru)
  * - Nunca inclui a mensagem interna do erro na resposta ao cliente
  * - Loga objeto detalhado ({ message, error }) via AppLoggerService para toda exceção capturada
  */
 
-import { ArgumentsHost, NotFoundException } from '@nestjs/common'
+import { ArgumentsHost, ConflictException, NotFoundException } from '@nestjs/common'
 import { AllExceptionsFilter } from '@shared/filters/all-exceptions.filter'
 import { AppLoggerService } from '@shared/logger/app-logger.service'
 
@@ -34,6 +35,13 @@ describe('AllExceptionsFilter', () => {
 
       expect(response.status).toHaveBeenCalledWith(404)
       expect(response.json).toHaveBeenCalledWith({ statusCode: 404, message: 'Recurso não encontrado' })
+    })
+
+    it('retorna statusCode e mensagem genérica para ConflictException', () => {
+      filter.catch(new ConflictException(), host)
+
+      expect(response.status).toHaveBeenCalledWith(409)
+      expect(response.json).toHaveBeenCalledWith({ statusCode: 409, message: 'Recurso já existe' })
     })
   })
 

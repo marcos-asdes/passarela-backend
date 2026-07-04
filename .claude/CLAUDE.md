@@ -17,14 +17,14 @@ Backend do **Passarela**, MVP de uma plataforma onde lojistas de um shopping pub
 
 ## Estado atual
 
-Primeiro commit trouxe **só o esqueleto técnico** (tooling, Docker, hello-world). Segundo commit adicionou o **kernel compartilhado**: `ConfigModule` (`@nestjs/config` + validação via `class-validator`), `DatabaseModule` (Mongoose + MongoDB), `SharedModule` (helmet, CORS, `@nestjs/throttler`, filtro de exceção global `AllExceptionsFilter`) — mesmo padrão `src/shared`/`src/database`/`src/config` do Ludora. Nenhum bounded context de negócio existe ainda.
+Primeiro commit trouxe **só o esqueleto técnico** (tooling, Docker, hello-world). Segundo commit adicionou o **kernel compartilhado**: `ConfigModule` (`@nestjs/config` + validação via `class-validator`), `DatabaseModule` (Mongoose + MongoDB), `SharedModule` (helmet, CORS, `@nestjs/throttler`, filtro de exceção global `AllExceptionsFilter`) — mesmo padrão `src/shared`/`src/database`/`src/config` do Ludora. Terceiro commit adicionou o bounded context **`auth`** (`src/modules/auth/`): registro/login separados (registro não emite token), papéis `seller`/`customer`, hash de senha argon2id, JWT (HS256, `@nestjs/jwt`+`passport-jwt`) com sessão controlada pelo banco (`sessions`, revogável), `ValidationPipe` global ativado. Detalhes de segurança e decisões em `.claude/plans/plano-auth.md`.
 
 Ordem planejada dos próximos commits incrementais (não implementado ainda, só para orientar decisões de estrutura):
 1. ~~Kernel compartilhado~~ ✅ feito.
-2. Bounded context `auth` — registro/login de `merchant` e `shopper`, JWT.
-3. Bounded context `offers` — CRUD de offers pelo merchant, endpoint público de listagem/filtro por status.
-4. Bounded context `interest` — shopper registra interest, decremento de estoque.
-5. Gateway WebSocket — notifica shoppers conectados quando uma nova offer é publicada.
+2. ~~Bounded context `auth`~~ ✅ feito — registro/login de `seller` e `customer`, JWT.
+3. Bounded context `offers` — CRUD de offers pelo seller, endpoint público de listagem/filtro por status.
+4. Bounded context `interest` — customer registra interest, decremento de estoque.
+5. Gateway WebSocket — notifica customers conectados quando uma nova offer é publicada.
 
 Ao adicionar cada um desses, replicar a arquitetura DDD de 4 camadas descrita abaixo e atualizar a tabela de path aliases.
 
@@ -41,6 +41,10 @@ Ao adicionar cada um desses, replicar a arquitetura DDD de 4 camadas descrita ab
 | `@nestjs/throttler` | 6.5.0 | `npm view @nestjs/throttler version` |
 | `class-validator` / `class-transformer` | 0.15.1 / 0.5.1 | `npm view class-validator version` |
 | `helmet` | 8.2.0 | `npm view helmet version` |
+| `@nestjs/jwt` | 11.0.2 | `npm view @nestjs/jwt version` |
+| `@nestjs/passport` / `passport` / `passport-jwt` | 11.0.5 / 0.7.0 / 4.0.1 | `npm view @nestjs/passport version` |
+| `argon2` | 0.44.0 | `npm view argon2 version` |
+| `ms` | 2.1.3 | `npm view ms version` |
 | MongoDB (imagem Docker) | `mongo:8.0` | `docker pull mongo:8.0` |
 | Mongoose | 9.7.3 | `npm view mongoose version` |
 | SWC (`@swc/core`, `@swc/cli`, `@swc/jest`) | 1.15.43 / 0.8.1 / 0.2.39 | `npm view @swc/core version` |
@@ -65,7 +69,7 @@ Mesmo padrão do Ludora: cada bounded context é um módulo Nest com 4 camadas, 
 3. **`infrastructure/`** — implementação das portas declaradas em `application/`. É a única camada que sabe que o banco é MongoDB/Mongoose.
 4. **`interface/`** — controllers HTTP, gateways WebSocket, DTOs de entrada/saída. Fala só com `application/` (use cases), nunca importa `infrastructure/` diretamente.
 
-Nenhum bounded context existe ainda neste commit — quando o primeiro for criado (`auth`, provavelmente), esta seção deve passar a apontar pra ele como exemplo real, do mesmo jeito que o Ludora aponta pra `src/modules/games/`.
+Exemplo real: `src/modules/auth/` (registro/login) — mesmo jeito que o Ludora aponta pra `src/modules/games/`. Ao criar `offers`/`interest`, seguir a mesma estrutura.
 
 ---
 
@@ -79,8 +83,9 @@ Zero imports relativos em todo o projeto (`src/` e `__tests__/`) — sempre via 
 | `@config`, `@config/*` | `src/config` |
 | `@database`, `@database/*` | `src/database` |
 | `@shared`, `@shared/*` | `src/shared` |
+| `@auth/*` | `src/modules/auth/*` |
 
-Conforme bounded contexts forem criados (`auth`, `offers`, `interest`, etc.), cada um ganha seu próprio alias (ex.: `@auth/*`, `@offers/*`) — um por contexto, não um `@modules/*` genérico, pelo mesmo motivo do Ludora: torna violação de fronteira entre contextos visível no import.
+Conforme bounded contexts forem criados (`offers`, `interest`, etc.), cada um ganha seu próprio alias (ex.: `@offers/*`) — um por contexto, não um `@modules/*` genérico, pelo mesmo motivo do Ludora: torna violação de fronteira entre contextos visível no import. Bounded contexts (diferente do kernel `config`/`database`/`shared`) só ganham o alias `*` — sem bare alias, sem barrel `index.ts` (confirmado no padrão do Ludora: `@games/*` existe, `@games`/`src/modules/games/index.ts` não).
 
 **Definido em dois lugares que precisam ficar sincronizados manualmente**: `tsconfig.json` (`compilerOptions.paths`) e `jest.config.ts` (`moduleNameMapper`). Ao adicionar/renomear/remover um alias, atualizar os dois.
 
@@ -92,6 +97,14 @@ Conforme bounded contexts forem criados (`auth`, `offers`, `interest`, etc.), ca
 
 - **`types.ts` sempre**: toda interface/type vive em um `types.ts` próprio da pasta — nunca inline em controller/service/entity/schema.
 - **JSDoc curto**: interfaces, classes, módulos e métodos ganham um comentário `/** ... */` de uma linha explicando o propósito (não o "o quê", que o nome já diz).
+- **JSDoc multi-linha**: quando não cabe em uma linha, formato bloco — `/**` sozinho na primeira linha, cada linha de conteúdo começando com `* `, `*/` sozinho na última. Nunca `/** ... texto longo ... */` tudo numa linha só. Exemplo:
+  ```ts
+  /**
+   * Caso de uso chamado a cada request autenticada (via JwtStrategy.validate()): confere sessão ativa
+   * E usuário ainda existente — dá revogação real (deletar usuário/revogar sessão derruba o token na hora
+   * seguinte, não só na expiração natural). Retorna null quando qualquer uma das checagens falha.
+   */
+  ```
 - **Zero imports relativos**: sempre via alias, mesmo para arquivos vizinhos na mesma pasta.
 - **Nunca `require()`, nunca `eslint-disable`**: sempre ES imports. Se o ESLint reclama, o código é ajustado para satisfazer a regra, não suprimido.
 - **Nomenclatura de arquivo por papel**: `*.entity.ts` (domain), `*.use-case.ts` (application), `*.schema.ts` / `*.repository.ts` (infrastructure), `*.dto.ts` / `*.controller.ts` / `*.gateway.ts` (interface), `*.module.ts` (composição Nest).

@@ -2,9 +2,6 @@
 FROM node:24-alpine AS development
 WORKDIR /usr/src/app
 COPY package*.json ./
-# npm ci (não npm install) falha em materializar o chokidar aqui: ele só existe no lockfile para satisfazer o
-# peerDependency opcional do @swc/cli (necessário para `nest start --watch`) + nossa própria devDependency direta;
-# npm ci não instala esse pacote nesse cenário específico, npm install instala corretamente.
 RUN npm install
 COPY . .
 EXPOSE 3000

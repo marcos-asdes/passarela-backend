@@ -4,6 +4,7 @@ export const GENERIC_ERROR_MESSAGES: Record<number, string> = {
   401: 'Não autorizado',
   403: 'Acesso negado',
   404: 'Recurso não encontrado',
+  409: 'Recurso já existe',
   429: 'Muitas requisições, tente novamente mais tarde',
   500: 'Erro interno do servidor'
 }

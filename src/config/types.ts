@@ -19,4 +19,8 @@ export interface IEnvironmentVariables {
   THROTTLE_TTL: number
   /** Número máximo de requisições permitidas dentro da janela de rate limiting */
   THROTTLE_LIMIT: number
+  /** Segredo usado para assinar/verificar tokens JWT */
+  JWT_SECRET: string
+  /** Tempo de expiração dos tokens JWT (ex.: 15m, 1h, 7d) */
+  JWT_EXPIRES_IN: string
 }

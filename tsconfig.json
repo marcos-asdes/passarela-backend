@@ -31,7 +31,8 @@
       "@database": ["src/database"],
       "@database/*": ["src/database/*"],
       "@shared": ["src/shared"],
-      "@shared/*": ["src/shared/*"]
+      "@shared/*": ["src/shared/*"],
+      "@auth/*": ["src/modules/auth/*"]
     }
   },
   "include": ["src/**/*.ts", "__tests__/**/*.ts"],

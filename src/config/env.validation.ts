@@ -1,6 +1,6 @@
 import { Environment, IEnvironmentVariables } from '@config/types'
 import { plainToInstance } from 'class-transformer'
-import { IsEnum, IsInt, IsNotEmpty, IsString, IsUrl, Max, Min, validateSync } from 'class-validator'
+import { IsEnum, IsInt, IsNotEmpty, IsString, IsUrl, Max, Min, MinLength, validateSync } from 'class-validator'
 
 /** Classe validada a partir das variáveis de ambiente brutas (process.env) */
 class EnvironmentVariables implements IEnvironmentVariables {
@@ -26,6 +26,14 @@ class EnvironmentVariables implements IEnvironmentVariables {
   @IsInt()
   @Min(1)
   THROTTLE_LIMIT!: number
+
+  @IsString()
+  @MinLength(32)
+  JWT_SECRET!: string
+
+  @IsString()
+  @IsNotEmpty()
+  JWT_EXPIRES_IN!: string
 }
 
 /** Valida process.env no bootstrap, lançando erro descritivo se alguma variável estiver ausente ou inválida */
