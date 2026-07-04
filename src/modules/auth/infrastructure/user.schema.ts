@@ -2,7 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { IAuthProviderLink, UserRole } from '@auth/domain/types'
 
 /** Modelo de persistência do Mongoose — forma como o usuário é gravado no MongoDB */
-@Schema({ timestamps: true })
+@Schema({ timestamps: true, collection: 'users' })
 export class UserSchemaClass {
   @Prop({ required: true, trim: true })
   name!: string

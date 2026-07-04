@@ -6,7 +6,7 @@ Backend em NestJS 11, arquitetura DDD, containerizado com Docker (com fast refre
 
 ## Estado atual
 
-Segundo commit: kernel compartilhado — configuração validada (`@nestjs/config` + `class-validator`), conexão MongoDB (`@nestjs/mongoose`), segurança (helmet, CORS, rate limiting) e filtro de exceção global. Autenticação, offers, interest e notificação em tempo real (WebSocket) serão adicionados em commits incrementais seguintes.
+Terceiro commit: bounded context **auth** — registro/login (seller/customer) com JWT, senha via argon2id, sessão controlada pelo banco (revogável) e documentação Swagger em `/docs`. Offers, interest e notificação em tempo real (WebSocket) serão adicionados em commits incrementais seguintes.
 
 Decisões e trade-offs completos de arquitetura estão documentados em [`.claude/CLAUDE.md`](.claude/CLAUDE.md) — vale a leitura antes de propor mudanças estruturais.
 
@@ -15,7 +15,8 @@ Decisões e trade-offs completos de arquitetura estão documentados em [`.claude
 - **Node.js 24 LTS**
 - **NestJS 11** com **SWC** (build rápido)
 - **MongoDB** via **Mongoose**
-- **Segurança**: helmet, CORS, rate limiting (`@nestjs/throttler`)
+- **Segurança**: helmet, CORS, rate limiting (`@nestjs/throttler`), JWT (`@nestjs/jwt`/`passport-jwt`), hash de senha `argon2id`
+- **Documentação**: Swagger/OpenAPI (`@nestjs/swagger`) em `/docs`
 - **Jest** + `@swc/jest` para testes
 - **Docker** / Docker Compose (com fast refresh em desenvolvimento)
 
@@ -29,6 +30,9 @@ docker compose up --build
 A API fica disponível em `http://localhost:3000` (porta do host mapeada em `docker-compose.yml` — ajuste se `3000` estiver ocupada na sua máquina):
 
 - `GET /` — confirma que a API está no ar (hello-world)
+- `POST /auth/register` — cria conta (seller/customer), não emite token
+- `POST /auth/login` — autentica e retorna o JWT
+- `GET /docs` — documentação Swagger/OpenAPI interativa
 
 Qualquer alteração em `src/` reinicia a aplicação automaticamente, sem rebuild manual da imagem.
 
@@ -70,7 +74,20 @@ npm install
 npm run start:dev
 ```
 
-Precisa de um MongoDB acessível na URI configurada em `MONGODB_URI` (`.env`) — sem Docker, aponte pra uma instância local ou remota.
+Precisa de um MongoDB acessível na URI configurada em `MONGODB_URI` (`.env`). O valor certo muda conforme onde a API e o Mongo estão rodando — o hostname `mongo` só resolve dentro da rede do `docker-compose`, e a porta do Mongo dockerizado é exposta no host como `27019` (não `27017`), pra não colidir com outro Mongo local:
+
+| Onde a API roda | Onde o Mongo roda | `MONGODB_URI` |
+|---|---|---|
+| Dentro do Docker | Dentro do Docker | `mongodb://usuario:senha@mongo:27017/passarela?authSource=admin` (valor padrão do `.env`) |
+| Fora do Docker (`npm run start:dev`) | Dentro do Docker | `mongodb://usuario:senha@localhost:27019/passarela?authSource=admin` |
+| Fora do Docker | Fora do Docker (Mongo local instalado na máquina) | `mongodb://localhost:27017/passarela` (sem credenciais, se o Mongo local não tiver auth habilitada) |
+
+Pra rodar fora do Docker apontando pra um Mongo diferente do que está no `.env`, sobrescreva a variável no shell antes de rodar — `@nestjs/config` nunca sobrescreve uma env var já setada no processo com o valor do `.env`:
+
+```powershell
+$env:MONGODB_URI="mongodb://localhost:27017/passarela"
+npm run start:dev
+```
 
 ## Testes
 
@@ -98,6 +115,7 @@ Zero imports relativos — sempre via alias. Tabela completa (cresce conforme no
 | `@config`, `@config/*` | `src/config` |
 | `@database`, `@database/*` | `src/database` |
 | `@shared`, `@shared/*` | `src/shared` |
+| `@auth/*` | `src/modules/auth/*` |
 
 ## Licença
 

@@ -1,4 +1,12 @@
 import { Body, ConflictException, Controller, HttpCode, HttpStatus, Post, UnauthorizedException } from '@nestjs/common'
+import {
+  ApiConflictResponse,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse
+} from '@nestjs/swagger'
 import { Throttle } from '@nestjs/throttler'
 import { CpfAlreadyRegisteredError } from '@auth/domain/cpf-already-registered.error'
 import { EmailAlreadyRegisteredError } from '@auth/domain/email-already-registered.error'
@@ -15,6 +23,7 @@ import { RegisterResponseDto } from '@auth/interface/register-response.dto'
 const AUTH_THROTTLE = { default: { limit: 5, ttl: 60_000 } }
 
 /** Endpoints de registro e login — fluxos separados, registro não emite token */
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -24,6 +33,9 @@ export class AuthController {
 
   @Throttle(AUTH_THROTTLE)
   @Post('register')
+  @ApiOperation({ summary: 'Cria uma conta (seller ou customer) — não emite token, faça login em seguida' })
+  @ApiCreatedResponse({ type: RegisterResponseDto })
+  @ApiConflictResponse({ description: 'E-mail ou CPF já cadastrados' })
   async register(@Body() dto: RegisterDto): Promise<RegisterResponseDto> {
     try {
       const result = await this.registerUseCase.execute({
@@ -47,6 +59,11 @@ export class AuthController {
   @Throttle(AUTH_THROTTLE)
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Autentica com e-mail/senha e retorna o JWT' })
+  @ApiOkResponse({ type: LoginResponseDto })
+  @ApiUnauthorizedResponse({
+    description: 'Credenciais inválidas — mesma resposta pra e-mail inexistente ou senha errada'
+  })
   async login(@Body() dto: LoginDto): Promise<LoginResponseDto> {
     try {
       const result = await this.loginUseCase.execute({ email: dto.email, password: dto.password })
@@ -64,9 +81,19 @@ export class AuthController {
     dto.id = result.id
     dto.name = result.name
     dto.email = result.email
+    dto.birthDate = this.formatBirthDate(result.birthDate)
     dto.role = result.role
     dto.createdAt = result.createdAt.toISOString()
     return dto
+  }
+
+  /** DD-MM-YYYY — usa getters UTC (não locais) pra não deslocar de dia por fuso horário, já que a data
+   * de nascimento é gravada como meia-noite UTC */
+  private formatBirthDate(date: Date): string {
+    const day = String(date.getUTCDate()).padStart(2, '0')
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0')
+    const year = date.getUTCFullYear()
+    return `${day}-${month}-${year}`
   }
 
   private toLoginResponseDto(result: ILoginResult): LoginResponseDto {

@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 
 /** Modelo de persistência do Mongoose — uma sessão por login, referenciada pelo JWT via jti (= _id) */
-@Schema({ timestamps: true })
+@Schema({ timestamps: true, collection: 'sessions' })
 export class SessionSchemaClass {
   @Prop({ required: true, index: true })
   userId!: string

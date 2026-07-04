@@ -116,6 +116,7 @@ describe('RegisterUseCase', () => {
       id: 'user-1',
       name: 'Fulano',
       email: 'fulano@example.com',
+      birthDate: input.birthDate,
       role: UserRole.Seller,
       createdAt
     })

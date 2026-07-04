@@ -17,7 +17,7 @@ Backend do **Passarela**, MVP de uma plataforma onde lojistas de um shopping pub
 
 ## Estado atual
 
-Primeiro commit trouxe **só o esqueleto técnico** (tooling, Docker, hello-world). Segundo commit adicionou o **kernel compartilhado**: `ConfigModule` (`@nestjs/config` + validação via `class-validator`), `DatabaseModule` (Mongoose + MongoDB), `SharedModule` (helmet, CORS, `@nestjs/throttler`, filtro de exceção global `AllExceptionsFilter`) — mesmo padrão `src/shared`/`src/database`/`src/config` do Ludora. Terceiro commit adicionou o bounded context **`auth`** (`src/modules/auth/`): registro/login separados (registro não emite token), papéis `seller`/`customer`, hash de senha argon2id, JWT (HS256, `@nestjs/jwt`+`passport-jwt`) com sessão controlada pelo banco (`sessions`, revogável), `ValidationPipe` global ativado. Detalhes de segurança e decisões em `.claude/plans/plano-auth.md`.
+Primeiro commit trouxe **só o esqueleto técnico** (tooling, Docker, hello-world). Segundo commit adicionou o **kernel compartilhado**: `ConfigModule` (`@nestjs/config` + validação via `class-validator`), `DatabaseModule` (Mongoose + MongoDB), `SharedModule` (helmet, CORS, `@nestjs/throttler`, filtro de exceção global `AllExceptionsFilter`) em `src/shared`/`src/database`/`src/config`. Terceiro commit adicionou o bounded context **`auth`** (`src/modules/auth/`): registro/login separados (registro não emite token), papéis `seller`/`customer`, hash de senha argon2id, JWT (HS256, `@nestjs/jwt`+`passport-jwt`) com sessão controlada pelo banco (`sessions`, revogável), `ValidationPipe` global ativado. Detalhes de segurança e decisões em `.claude/plans/plano-auth.md`. Documentação Swagger/OpenAPI (`@nestjs/swagger`) ativada em `/docs` (`src/shared/swagger/swagger.setup.ts`), gerada a partir dos DTOs de `auth`.
 
 Ordem planejada dos próximos commits incrementais (não implementado ainda, só para orientar decisões de estrutura):
 1. ~~Kernel compartilhado~~ ✅ feito.
@@ -45,6 +45,7 @@ Ao adicionar cada um desses, replicar a arquitetura DDD de 4 camadas descrita ab
 | `@nestjs/passport` / `passport` / `passport-jwt` | 11.0.5 / 0.7.0 / 4.0.1 | `npm view @nestjs/passport version` |
 | `argon2` | 0.44.0 | `npm view argon2 version` |
 | `ms` | 2.1.3 | `npm view ms version` |
+| `@nestjs/swagger` | 11.4.5 | `npm view @nestjs/swagger version` |
 | MongoDB (imagem Docker) | `mongo:8.0` | `docker pull mongo:8.0` |
 | Mongoose | 9.7.3 | `npm view mongoose version` |
 | SWC (`@swc/core`, `@swc/cli`, `@swc/jest`) | 1.15.43 / 0.8.1 / 0.2.39 | `npm view @swc/core version` |
@@ -52,24 +53,24 @@ Ao adicionar cada um desses, replicar a arquitetura DDD de 4 camadas descrita ab
 | TypeScript | 6.0.3 | `npm view typescript version` |
 | npm | 11.11.0 | `npm -v` |
 
-**Regra operacional** (herdada do Ludora): estes números são o estado observado na criação do projeto, não valores para colar cegamente em atualizações futuras. Ao adicionar uma dependência nova, usar `npm install <pacote>@latest` e deixar o `package-lock.json` registrar a versão real resolvida — nunca copiar um número de versão de outro projeto sem reconfirmar.
+**Regra operacional**: estes números são o estado observado na criação do projeto, não valores para colar cegamente em atualizações futuras. Ao adicionar uma dependência nova, usar `npm install <pacote>@latest` e deixar o `package-lock.json` registrar a versão real resolvida — nunca copiar um número de versão de outro projeto sem reconfirmar.
 
-### Por que reaproveitar a stack do Ludora
+### Por que essa stack
 
-Mesmo racional documentado lá: NestJS 11/CommonJS (não v12/ESM ainda), Jest + `@swc/jest` (não Vitest), Express (não Fastify) — decisões de menor risco e já validadas ponta a ponta em outro projeto real. Não foram reavaliadas aqui porque nada no desafio técnico exige o contrário.
+NestJS 11/CommonJS (não v12/ESM ainda), Jest + `@swc/jest` (não Vitest), Express (não Fastify) — escolhas de menor risco/mais maduras no ecossistema atual. Não foram reavaliadas aqui porque nada no desafio técnico exige o contrário.
 
 ---
 
 ## Arquitetura DDD
 
-Mesmo padrão do Ludora: cada bounded context é um módulo Nest com 4 camadas, sempre na mesma ordem de dependência (uma camada só pode depender das que vêm antes dela nesta lista):
+Cada bounded context é um módulo Nest com 4 camadas, sempre na mesma ordem de dependência (uma camada só pode depender das que vêm antes dela nesta lista):
 
 1. **`domain/`** — entidades e value objects. TypeScript puro, zero import de Nest/Mongoose/qualquer framework. Só regra de negócio (ex.: uma `Offer` não pode ter estoque negativo).
 2. **`application/`** — casos de uso (use cases) e as portas (interfaces) que eles precisam. Conhece `domain/`, nunca conhece `infrastructure/` diretamente — depende só das interfaces que ela mesma declara.
 3. **`infrastructure/`** — implementação das portas declaradas em `application/`. É a única camada que sabe que o banco é MongoDB/Mongoose.
 4. **`interface/`** — controllers HTTP, gateways WebSocket, DTOs de entrada/saída. Fala só com `application/` (use cases), nunca importa `infrastructure/` diretamente.
 
-Exemplo real: `src/modules/auth/` (registro/login) — mesmo jeito que o Ludora aponta pra `src/modules/games/`. Ao criar `offers`/`interest`, seguir a mesma estrutura.
+Exemplo real: `src/modules/auth/` (registro/login). Ao criar `offers`/`interest`, seguir a mesma estrutura.
 
 ---
 
@@ -85,7 +86,7 @@ Zero imports relativos em todo o projeto (`src/` e `__tests__/`) — sempre via 
 | `@shared`, `@shared/*` | `src/shared` |
 | `@auth/*` | `src/modules/auth/*` |
 
-Conforme bounded contexts forem criados (`offers`, `interest`, etc.), cada um ganha seu próprio alias (ex.: `@offers/*`) — um por contexto, não um `@modules/*` genérico, pelo mesmo motivo do Ludora: torna violação de fronteira entre contextos visível no import. Bounded contexts (diferente do kernel `config`/`database`/`shared`) só ganham o alias `*` — sem bare alias, sem barrel `index.ts` (confirmado no padrão do Ludora: `@games/*` existe, `@games`/`src/modules/games/index.ts` não).
+Conforme bounded contexts forem criados (`offers`, `interest`, etc.), cada um ganha seu próprio alias (ex.: `@offers/*`) — um por contexto, não um `@modules/*` genérico: torna violação de fronteira entre contextos visível no import. Bounded contexts (diferente do kernel `config`/`database`/`shared`) só ganham o alias `*` — sem bare alias, sem barrel `index.ts` (ex.: `@auth/*` existe, `@auth`/`src/modules/auth/index.ts` não).
 
 **Definido em dois lugares que precisam ficar sincronizados manualmente**: `tsconfig.json` (`compilerOptions.paths`) e `jest.config.ts` (`moduleNameMapper`). Ao adicionar/renomear/remover um alias, atualizar os dois.
 
@@ -140,7 +141,7 @@ npm install
 npm run start:dev
 ```
 
-`docker-compose.yml` tem os serviços `api` e `mongo` (imagem `mongo:8.0`, porta host `27019` pra não colidir com o Mongo do Ludora que usa `27018`). `api` só sobe depois do `mongo` ficar saudável (`depends_on: condition: service_healthy`).
+`docker-compose.yml` tem os serviços `api` e `mongo` (imagem `mongo:8.0`, porta host `27019` — não a `27017` padrão, pra não colidir com outro MongoDB rodando local/dockerizado na máquina). `api` só sobe depois do `mongo` ficar saudável (`depends_on: condition: service_healthy`).
 
 ---
 

@@ -3,6 +3,7 @@
  *
  * Cenários testados:
  * - register: em caso de sucesso, retorna os dados criados sem accessToken/senha/CPF
+ * - register: formata birthDate como DD-MM-YYYY na resposta
  * - register: converte EmailAlreadyRegisteredError em ConflictException
  * - register: converte CpfAlreadyRegisteredError em ConflictException
  * - login: em caso de sucesso, retorna accessToken + dados do usuário
@@ -50,6 +51,7 @@ describe('AuthController', () => {
         id: 'user-1',
         name: 'Fulano',
         email: 'fulano@example.com',
+        birthDate: new Date('1990-05-10T00:00:00.000Z'),
         role: UserRole.Seller,
         createdAt: new Date('2026-01-01T00:00:00.000Z')
       })
@@ -60,6 +62,7 @@ describe('AuthController', () => {
         id: 'user-1',
         name: 'Fulano',
         email: 'fulano@example.com',
+        birthDate: '10-05-1990',
         role: UserRole.Seller,
         createdAt: '2026-01-01T00:00:00.000Z'
       })

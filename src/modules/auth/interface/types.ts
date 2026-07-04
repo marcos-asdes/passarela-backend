@@ -5,6 +5,8 @@ export interface IRegisterResponse {
   id: string
   name: string
   email: string
+  /** Formatada como DD-MM-YYYY — o valor no banco continua Date (sort/range query corretos) */
+  birthDate: string
   role: UserRole
   createdAt: string
 }

@@ -88,6 +88,7 @@ export interface IRegisterResult {
   id: string
   name: string
   email: string
+  birthDate: Date
   role: UserRole
   createdAt: Date
 }
