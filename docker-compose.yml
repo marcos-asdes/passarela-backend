@@ -21,6 +21,33 @@ services:
       - ./.swcrc:/usr/src/app/.swcrc
       - node_modules:/usr/src/app/node_modules
     command: npm run start:dev
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - passarela-network
+
+  mongo:
+    image: mongo:8.0
+    container_name: passarela-mongo
+    # MONGO_LOG_PATH controla visibilidade do log na fonte (mongod), não no driver do Docker —
+    # isso apaga o log tanto de "docker compose logs" quanto do attach ao vivo ("docker compose up" sem -d).
+    # Padrão /dev/stdout (visível). Setar /dev/null no .env para silenciar.
+    command: ["mongod", "--quiet", "--logpath", "${MONGO_LOG_PATH:-/dev/stdout}"]
+    ports:
+      - "27019:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
+    volumes:
+      - passarela-mongo-data:/data/db
+    healthcheck:
+      # 'ping' é isento de autenticação no MongoDB — sem -u/-p aqui evita handshake de auth a cada checagem, reduzindo ruído no log
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       - passarela-network
 
@@ -29,4 +56,5 @@ networks:
     driver: bridge
 
 volumes:
+  passarela-mongo-data:
   node_modules:

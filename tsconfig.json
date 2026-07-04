@@ -25,7 +25,13 @@
     "outDir": "./dist",
     "baseUrl": ".",
     "paths": {
-      "@app/*": ["src/*"]
+      "@app/*": ["src/*"],
+      "@config": ["src/config"],
+      "@config/*": ["src/config/*"],
+      "@database": ["src/database"],
+      "@database/*": ["src/database/*"],
+      "@shared": ["src/shared"],
+      "@shared/*": ["src/shared/*"]
     }
   },
   "include": ["src/**/*.ts", "__tests__/**/*.ts"],

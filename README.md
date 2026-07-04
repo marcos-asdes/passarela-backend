@@ -6,7 +6,7 @@ Backend em NestJS 11, arquitetura DDD, containerizado com Docker (com fast refre
 
 ## Estado atual
 
-Este é o **primeiro commit**: traz só o esqueleto técnico (tooling de lint/formatação, TypeScript, Jest/SWC, Docker) e um endpoint `GET /` de hello-world, pra validar que toda a base roda ponta a ponta antes de qualquer regra de negócio entrar. Autenticação, offers, interest e notificação em tempo real (WebSocket) serão adicionados em commits incrementais seguintes.
+Segundo commit: kernel compartilhado — configuração validada (`@nestjs/config` + `class-validator`), conexão MongoDB (`@nestjs/mongoose`), segurança (helmet, CORS, rate limiting) e filtro de exceção global. Autenticação, offers, interest e notificação em tempo real (WebSocket) serão adicionados em commits incrementais seguintes.
 
 Decisões e trade-offs completos de arquitetura estão documentados em [`.claude/CLAUDE.md`](.claude/CLAUDE.md) — vale a leitura antes de propor mudanças estruturais.
 
@@ -14,7 +14,8 @@ Decisões e trade-offs completos de arquitetura estão documentados em [`.claude
 
 - **Node.js 24 LTS**
 - **NestJS 11** com **SWC** (build rápido)
-- **MongoDB** (a ser adicionado junto com a camada de persistência)
+- **MongoDB** via **Mongoose**
+- **Segurança**: helmet, CORS, rate limiting (`@nestjs/throttler`)
 - **Jest** + `@swc/jest` para testes
 - **Docker** / Docker Compose (com fast refresh em desenvolvimento)
 
@@ -69,6 +70,8 @@ npm install
 npm run start:dev
 ```
 
+Precisa de um MongoDB acessível na URI configurada em `MONGODB_URI` (`.env`) — sem Docker, aponte pra uma instância local ou remota.
+
 ## Testes
 
 ```bash
@@ -92,6 +95,9 @@ Zero imports relativos — sempre via alias. Tabela completa (cresce conforme no
 | Alias | Aponta para |
 |---|---|
 | `@app/*` | `src/*` |
+| `@config`, `@config/*` | `src/config` |
+| `@database`, `@database/*` | `src/database` |
+| `@shared`, `@shared/*` | `src/shared` |
 
 ## Licença
 

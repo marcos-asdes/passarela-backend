@@ -17,10 +17,10 @@ Backend do **Passarela**, MVP de uma plataforma onde lojistas de um shopping pub
 
 ## Estado atual
 
-Este primeiro commit traz **só o esqueleto técnico**: tooling (lint, prettier, TypeScript, Jest/SWC), Docker e um endpoint `GET /` de hello-world (`AppController`). Nenhum bounded context de negócio existe ainda.
+Primeiro commit trouxe **só o esqueleto técnico** (tooling, Docker, hello-world). Segundo commit adicionou o **kernel compartilhado**: `ConfigModule` (`@nestjs/config` + validação via `class-validator`), `DatabaseModule` (Mongoose + MongoDB), `SharedModule` (helmet, CORS, `@nestjs/throttler`, filtro de exceção global `AllExceptionsFilter`) — mesmo padrão `src/shared`/`src/database`/`src/config` do Ludora. Nenhum bounded context de negócio existe ainda.
 
 Ordem planejada dos próximos commits incrementais (não implementado ainda, só para orientar decisões de estrutura):
-1. Kernel compartilhado (config via `@nestjs/config`, conexão MongoDB, segurança — helmet/CORS/throttler —, filtro de exceção global), no mesmo espírito do `src/shared`/`src/database`/`src/config` do Ludora.
+1. ~~Kernel compartilhado~~ ✅ feito.
 2. Bounded context `auth` — registro/login de `merchant` e `shopper`, JWT.
 3. Bounded context `offers` — CRUD de offers pelo merchant, endpoint público de listagem/filtro por status.
 4. Bounded context `interest` — shopper registra interest, decremento de estoque.
@@ -32,12 +32,17 @@ Ao adicionar cada um desses, replicar a arquitetura DDD de 4 camadas descrita ab
 
 ## Stack e Versões
 
-| Item | Versão instalada em 2026-07-03 | Reconfirmar com |
+| Item | Versão instalada em 2026-07-04 | Reconfirmar com |
 |---|---|---|
 | Node.js | 24.14.0 (LTS "Krypton") | `node -v` / `.nvmrc` |
 | NestJS (`@nestjs/core` e demais `@nestjs/*`) | 11.1.27 | `npm view @nestjs/core version` |
-| MongoDB (imagem Docker) | ainda não adicionado — entra com o `DatabaseModule` (ver [Estado atual](#estado-atual)) | `docker pull mongo:8.0` |
-| Mongoose | ainda não adicionado | `npm view mongoose version` |
+| `@nestjs/config` | 4.0.4 | `npm view @nestjs/config version` |
+| `@nestjs/mongoose` | 11.0.4 | `npm view @nestjs/mongoose version` |
+| `@nestjs/throttler` | 6.5.0 | `npm view @nestjs/throttler version` |
+| `class-validator` / `class-transformer` | 0.15.1 / 0.5.1 | `npm view class-validator version` |
+| `helmet` | 8.2.0 | `npm view helmet version` |
+| MongoDB (imagem Docker) | `mongo:8.0` | `docker pull mongo:8.0` |
+| Mongoose | 9.7.3 | `npm view mongoose version` |
 | SWC (`@swc/core`, `@swc/cli`, `@swc/jest`) | 1.15.43 / 0.8.1 / 0.2.39 | `npm view @swc/core version` |
 | Jest | 30.4.2 | `npm view jest version` |
 | TypeScript | 6.0.3 | `npm view typescript version` |
@@ -71,6 +76,9 @@ Zero imports relativos em todo o projeto (`src/` e `__tests__/`) — sempre via 
 | Alias | Aponta para |
 |---|---|
 | `@app/*` | `src/*` (arquivos soltos na raiz: `main.ts`, `app.module.ts`, `app.controller.ts`, `types.ts`) |
+| `@config`, `@config/*` | `src/config` |
+| `@database`, `@database/*` | `src/database` |
+| `@shared`, `@shared/*` | `src/shared` |
 
 Conforme bounded contexts forem criados (`auth`, `offers`, `interest`, etc.), cada um ganha seu próprio alias (ex.: `@auth/*`, `@offers/*`) — um por contexto, não um `@modules/*` genérico, pelo mesmo motivo do Ludora: torna violação de fronteira entre contextos visível no import.
 
@@ -87,6 +95,7 @@ Conforme bounded contexts forem criados (`auth`, `offers`, `interest`, etc.), ca
 - **Zero imports relativos**: sempre via alias, mesmo para arquivos vizinhos na mesma pasta.
 - **Nunca `require()`, nunca `eslint-disable`**: sempre ES imports. Se o ESLint reclama, o código é ajustado para satisfazer a regra, não suprimido.
 - **Nomenclatura de arquivo por papel**: `*.entity.ts` (domain), `*.use-case.ts` (application), `*.schema.ts` / `*.repository.ts` (infrastructure), `*.dto.ts` / `*.controller.ts` / `*.gateway.ts` (interface), `*.module.ts` (composição Nest).
+- **Barrel files (`index.ts`) fora do coverage**: todo `index.ts` que só reexporta (`export { X } from '...'`) abre com `/* v8 ignore start */` na primeira linha, pra não contar como código não coberto.
 
 ---
 
@@ -97,6 +106,7 @@ Conforme bounded contexts forem criados (`auth`, `offers`, `interest`, etc.), ca
 - **Framework**: Jest + `@swc/jest`.
 - **Cabeçalho obrigatório "Cenários testados"**: todo `*.spec.ts` abre com um bloco JSDoc listando os cenários cobertos naquele arquivo (ver `__tests__/app.controller.spec.ts` para o formato). Esta lista deve ser atualizada manualmente sempre que um `describe`/`it` for adicionado, editado ou removido.
 - **Idioma**: todo `describe`/`it` em pt-BR com acentuação.
+- **`reflect-metadata` via `setupFiles`**: classes decoradas com `class-validator`/`class-transformer` (ex.: `EnvironmentVariables` em `env.validation.ts`) precisam de `Reflect.getMetadata` definido *antes* de a classe ser carregada. Um `import 'reflect-metadata'` dentro do próprio spec é frágil — organizadores de import (IDE/lint) podem reordenar e quebrar silenciosamente a leitura de `design:type`. Por isso `jest.config.ts` carrega `reflect-metadata` via `setupFiles`, garantindo a ordem independente do que o spec importa.
 
 ---
 
@@ -117,7 +127,7 @@ npm install
 npm run start:dev
 ```
 
-`docker-compose.yml` só tem o serviço `api` por enquanto — o serviço `mongo` entra junto com o `DatabaseModule` (ver [Estado atual](#estado-atual)).
+`docker-compose.yml` tem os serviços `api` e `mongo` (imagem `mongo:8.0`, porta host `27019` pra não colidir com o Mongo do Ludora que usa `27018`). `api` só sobe depois do `mongo` ficar saudável (`depends_on: condition: service_healthy`).
 
 ---
 
