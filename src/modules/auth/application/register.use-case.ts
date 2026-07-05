@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common'
 import { normalizeCPF } from '@auth/domain/cpf'
+import { capitalizeName } from '@auth/domain/name'
 import { User } from '@auth/domain/user.entity'
 import {
   ICreateUserData,
@@ -20,13 +21,14 @@ export class RegisterUseCase {
   ) {}
 
   async execute(input: IRegisterInput): Promise<IRegisterResult> {
+    const name = capitalizeName(input.name)
     const email = User.normalizeEmail(input.email)
     const cpf = normalizeCPF(input.cpf)
     const phone = User.normalizePhone(input.phone)
     const passwordHash = await this.passwordHasher.hash(input.password)
 
     const data: ICreateUserData = {
-      name: input.name,
+      name,
       email,
       passwordHash,
       cpf,
@@ -37,13 +39,6 @@ export class RegisterUseCase {
 
     const user = await this.userRepository.create(data)
 
-    return {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      birthDate: user.birthDate,
-      role: user.role,
-      createdAt: user.createdAt
-    }
+    return { id: user.id, role: user.role }
   }
 }

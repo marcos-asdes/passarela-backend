@@ -2,16 +2,10 @@ import { UserRole } from '@auth/domain/types'
 import { ILoginResponse } from '@auth/interface/types'
 import { ApiProperty } from '@nestjs/swagger'
 
-/** Recorte de usuário devolvido no login — nunca CPF/telefone/senha */
+/** Recorte de usuário devolvido no login — só id/role (mesmos dados assinados no JWT), nunca nome/e-mail/CPF/telefone */
 export class LoginResponseUserDto {
   @ApiProperty()
   id!: string
-
-  @ApiProperty()
-  name!: string
-
-  @ApiProperty()
-  email!: string
 
   @ApiProperty({ enum: UserRole })
   role!: UserRole

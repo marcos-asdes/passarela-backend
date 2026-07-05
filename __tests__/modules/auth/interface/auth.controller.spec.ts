@@ -2,12 +2,16 @@
  * Testes unitários para AuthController
  *
  * Cenários testados:
- * - register: em caso de sucesso, retorna os dados criados sem accessToken/senha/CPF
- * - register: formata birthDate como DD-MM-YYYY na resposta
+ * - register: em caso de sucesso, retorna só uma mensagem informativa (nunca dados do usuário)
  * - register: converte EmailAlreadyRegisteredError em ConflictException
  * - register: converte CpfAlreadyRegisteredError em ConflictException
- * - login: em caso de sucesso, retorna accessToken + dados do usuário
+ * - login: em caso de sucesso, retorna accessToken + id/role (nunca nome/e-mail/CPF)
  * - login: converte InvalidCredentialsError em UnauthorizedException
+ * - register: loga sucesso (info) com id+role
+ * - register: loga tentativa de e-mail já cadastrado (warn) com o e-mail, nunca o CPF
+ * - register: loga tentativa de CPF já cadastrado (warn) sem expor o CPF
+ * - login: loga sucesso (info) com id+role
+ * - login: loga tentativa de credenciais inválidas (warn) com o e-mail, nunca a senha
  */
 
 import { ConflictException, UnauthorizedException } from '@nestjs/common'
@@ -20,10 +24,12 @@ import { RegisterUseCase } from '@auth/application/register.use-case'
 import { AuthController } from '@auth/interface/auth.controller'
 import { LoginDto } from '@auth/interface/login.dto'
 import { RegisterDto } from '@auth/interface/register.dto'
+import { AppLoggerService } from '@shared/logger/app-logger.service'
 
 describe('AuthController', () => {
   let registerUseCase: jest.Mocked<RegisterUseCase>
   let loginUseCase: jest.Mocked<LoginUseCase>
+  let logger: jest.Mocked<AppLoggerService>
   let controller: AuthController
 
   const registerDto: RegisterDto = {
@@ -42,33 +48,22 @@ describe('AuthController', () => {
   beforeEach(() => {
     registerUseCase = { execute: jest.fn() } as unknown as jest.Mocked<RegisterUseCase>
     loginUseCase = { execute: jest.fn() } as unknown as jest.Mocked<LoginUseCase>
-    controller = new AuthController(registerUseCase, loginUseCase)
+    logger = { log: jest.fn(), warn: jest.fn() } as unknown as jest.Mocked<AppLoggerService>
+    controller = new AuthController(registerUseCase, loginUseCase, logger)
   })
 
   describe('register', () => {
-    it('em caso de sucesso, retorna os dados criados sem accessToken/senha/CPF', async () => {
-      registerUseCase.execute.mockResolvedValue({
-        id: 'user-1',
-        name: 'Fulano',
-        email: 'fulano@example.com',
-        birthDate: new Date('1990-05-10T00:00:00.000Z'),
-        role: UserRole.Seller,
-        createdAt: new Date('2026-01-01T00:00:00.000Z')
-      })
+    it('em caso de sucesso, retorna só uma mensagem informativa (nunca dados do usuário)', async () => {
+      registerUseCase.execute.mockResolvedValue({ id: 'user-1', role: UserRole.Seller })
 
       const result = await controller.register(registerDto)
 
-      expect(result).toEqual({
-        id: 'user-1',
-        name: 'Fulano',
-        email: 'fulano@example.com',
-        birthDate: '10-05-1990',
-        role: UserRole.Seller,
-        createdAt: '2026-01-01T00:00:00.000Z'
-      })
-      expect(result).not.toHaveProperty('accessToken')
-      expect(result).not.toHaveProperty('passwordHash')
+      expect(result).toEqual({ message: expect.any(String) })
+      expect(result).not.toHaveProperty('id')
+      expect(result).not.toHaveProperty('name')
+      expect(result).not.toHaveProperty('email')
       expect(result).not.toHaveProperty('cpf')
+      expect(result).not.toHaveProperty('accessToken')
     })
 
     it('converte EmailAlreadyRegisteredError em ConflictException', async () => {
@@ -82,27 +77,82 @@ describe('AuthController', () => {
 
       await expect(controller.register(registerDto)).rejects.toBeInstanceOf(ConflictException)
     })
+
+    it('loga sucesso com id+role', async () => {
+      registerUseCase.execute.mockResolvedValue({ id: 'user-1', role: UserRole.Seller })
+
+      await controller.register(registerDto)
+
+      expect(logger.log).toHaveBeenCalledWith('Usuário registrado (id: user-1, role: seller)', 'AuthController')
+    })
+
+    it('loga tentativa de e-mail já cadastrado com o e-mail, nunca o CPF', async () => {
+      registerUseCase.execute.mockRejectedValue(new EmailAlreadyRegisteredError())
+
+      await expect(controller.register(registerDto)).rejects.toBeInstanceOf(ConflictException)
+
+      expect(logger.warn).toHaveBeenCalledWith(
+        `Tentativa de registro com e-mail já cadastrado: ${registerDto.email}`,
+        'AuthController'
+      )
+      expect(logger.warn.mock.calls[0][0]).not.toContain(registerDto.cpf)
+    })
+
+    it('loga tentativa de CPF já cadastrado sem expor o CPF', async () => {
+      registerUseCase.execute.mockRejectedValue(new CpfAlreadyRegisteredError())
+
+      await expect(controller.register(registerDto)).rejects.toBeInstanceOf(ConflictException)
+
+      expect(logger.warn).toHaveBeenCalledWith('Tentativa de registro com CPF já cadastrado', 'AuthController')
+      expect(logger.warn.mock.calls[0][0]).not.toContain(registerDto.cpf)
+    })
   })
 
   describe('login', () => {
-    it('em caso de sucesso, retorna accessToken + dados do usuário', async () => {
+    it('em caso de sucesso, retorna accessToken + id/role (nunca nome/e-mail/CPF)', async () => {
       loginUseCase.execute.mockResolvedValue({
         accessToken: 'signed-token',
-        user: { id: 'user-1', name: 'Fulano', email: 'fulano@example.com', role: UserRole.Seller }
+        user: { id: 'user-1', role: UserRole.Seller }
       })
 
       const result = await controller.login(loginDto)
 
       expect(result).toEqual({
         accessToken: 'signed-token',
-        user: { id: 'user-1', name: 'Fulano', email: 'fulano@example.com', role: UserRole.Seller }
+        user: { id: 'user-1', role: UserRole.Seller }
       })
+      expect(result.user).not.toHaveProperty('name')
+      expect(result.user).not.toHaveProperty('email')
+      expect(result.user).not.toHaveProperty('cpf')
     })
 
     it('converte InvalidCredentialsError em UnauthorizedException', async () => {
       loginUseCase.execute.mockRejectedValue(new InvalidCredentialsError())
 
       await expect(controller.login(loginDto)).rejects.toBeInstanceOf(UnauthorizedException)
+    })
+
+    it('loga sucesso com id+role', async () => {
+      loginUseCase.execute.mockResolvedValue({
+        accessToken: 'signed-token',
+        user: { id: 'user-1', role: UserRole.Seller }
+      })
+
+      await controller.login(loginDto)
+
+      expect(logger.log).toHaveBeenCalledWith('Login realizado (id: user-1, role: seller)', 'AuthController')
+    })
+
+    it('loga tentativa de credenciais inválidas com o e-mail, nunca a senha', async () => {
+      loginUseCase.execute.mockRejectedValue(new InvalidCredentialsError())
+
+      await expect(controller.login(loginDto)).rejects.toBeInstanceOf(UnauthorizedException)
+
+      expect(logger.warn).toHaveBeenCalledWith(
+        `Tentativa de login com credenciais inválidas: ${loginDto.email}`,
+        'AuthController'
+      )
+      expect(logger.warn.mock.calls[0][0]).not.toContain(loginDto.password)
     })
   })
 })

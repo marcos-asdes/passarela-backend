@@ -1,24 +1,8 @@
-import { UserRole } from '@auth/domain/types'
 import { IRegisterResponse } from '@auth/interface/types'
 import { ApiProperty } from '@nestjs/swagger'
 
-/** DTO de resposta do register — mapeado manualmente pelo controller, nunca inclui CPF/telefone/senha */
+/** DTO de resposta do register — só confirmação; dados do usuário nunca voltam aqui, login é chamada separada */
 export class RegisterResponseDto implements IRegisterResponse {
-  @ApiProperty()
-  id!: string
-
-  @ApiProperty()
-  name!: string
-
-  @ApiProperty()
-  email!: string
-
-  @ApiProperty({ description: 'Data de nascimento, formato DD-MM-YYYY', example: '10-05-1990' })
-  birthDate!: string
-
-  @ApiProperty({ enum: UserRole })
-  role!: UserRole
-
-  @ApiProperty({ description: 'Data de criação, em ISO 8601' })
-  createdAt!: string
+  @ApiProperty({ example: 'Conta criada com sucesso. Faça login para continuar.' })
+  message!: string
 }

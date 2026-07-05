@@ -50,14 +50,6 @@ export class LoginUseCase {
     const session = await this.sessionRepository.create({ userId: user.id, expiresAt })
     const accessToken = this.tokenService.sign({ sub: user.id, role: user.role, jti: session.id })
 
-    return {
-      accessToken,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role
-      }
-    }
+    return { accessToken, user: { id: user.id, role: user.role } }
   }
 }

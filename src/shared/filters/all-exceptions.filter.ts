@@ -14,10 +14,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const statusCode = exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR
     const message = GENERIC_ERROR_MESSAGES[statusCode] ?? DEFAULT_ERROR_MESSAGE
 
-    this.logger.logError({
-      message: exception instanceof Error ? exception.message : 'Exceção não tratada capturada pelo filtro global',
-      error: exception
-    })
+    const logMessage =
+      exception instanceof Error ? exception.message : 'Exceção não tratada capturada pelo filtro global'
+    const stack = exception instanceof Error ? exception.stack : undefined
+    this.logger.error(logMessage, stack, 'AllExceptionsFilter')
 
     const body: IGenericErrorResponse = { statusCode, message }
     response.status(statusCode).json(body)

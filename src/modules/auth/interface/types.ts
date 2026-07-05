@@ -1,23 +1,15 @@
 import { UserRole } from '@auth/domain/types'
 
-/** Corpo de resposta de POST /auth/register — nunca CPF, telefone ou senha */
+/** Corpo de resposta de POST /auth/register — só confirmação; frontend redireciona pro login pelo statusCode */
 export interface IRegisterResponse {
-  id: string
-  name: string
-  email: string
-  /** Formatada como DD-MM-YYYY — o valor no banco continua Date (sort/range query corretos) */
-  birthDate: string
-  role: UserRole
-  createdAt: string
+  message: string
 }
 
-/** Corpo de resposta de POST /auth/login */
+/** Corpo de resposta de POST /auth/login — nunca nome, e-mail ou CPF, só o que já está assinado no JWT */
 export interface ILoginResponse {
   accessToken: string
   user: {
     id: string
-    name: string
-    email: string
     role: UserRole
   }
 }

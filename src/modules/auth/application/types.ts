@@ -83,14 +83,10 @@ export interface IRegisterInput {
   role: UserRole
 }
 
-/** Resultado do registro — nunca inclui senha */
+/** Resultado do registro — a resposta ao cliente é só uma mensagem informativa, esse resultado existe pra log/uso interno */
 export interface IRegisterResult {
   id: string
-  name: string
-  email: string
-  birthDate: Date
   role: UserRole
-  createdAt: Date
 }
 
 /** Entrada do caso de uso de login */
@@ -99,13 +95,11 @@ export interface ILoginInput {
   password: string
 }
 
-/** Resultado do login — token + dados mínimos do usuário */
+/** Resultado do login — token + id/role do usuário (mesmos dados assinados no JWT, nunca nome/e-mail/CPF) */
 export interface ILoginResult {
   accessToken: string
   user: {
     id: string
-    name: string
-    email: string
     role: UserRole
   }
 }

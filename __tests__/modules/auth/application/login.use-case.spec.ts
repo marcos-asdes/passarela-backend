@@ -3,7 +3,7 @@
  *
  * Cenários testados:
  * - Normaliza o e-mail antes de buscar o usuário
- * - Em caso de credenciais corretas, cria uma sessão e retorna accessToken + dados do usuário
+ * - Em caso de credenciais corretas, cria uma sessão e retorna accessToken + id/role (nunca nome/e-mail)
  * - O jti assinado no token corresponde ao id da sessão criada
  * - Lança InvalidCredentialsError quando o e-mail não existe
  * - Lança InvalidCredentialsError quando a senha está incorreta
@@ -69,7 +69,7 @@ describe('LoginUseCase', () => {
     expect(userRepository.findByEmail).toHaveBeenCalledWith('fulano@example.com')
   })
 
-  it('em caso de sucesso, cria uma sessão e retorna accessToken + dados do usuário', async () => {
+  it('em caso de sucesso, cria uma sessão e retorna accessToken + id/role (nunca nome/e-mail)', async () => {
     const user = buildUser()
     userRepository.findByEmail.mockResolvedValue(user)
     passwordHasher.compare.mockResolvedValue(true)
@@ -83,7 +83,7 @@ describe('LoginUseCase', () => {
     expect(sessionRepository.create).toHaveBeenCalledWith({ userId: 'user-1', expiresAt: expect.any(Date) })
     expect(result).toEqual({
       accessToken: 'signed-token',
-      user: { id: 'user-1', name: 'Fulano', email: 'fulano@example.com', role: UserRole.Customer }
+      user: { id: 'user-1', role: UserRole.Customer }
     })
   })
 

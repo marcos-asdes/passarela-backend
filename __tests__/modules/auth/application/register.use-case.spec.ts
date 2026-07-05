@@ -2,9 +2,10 @@
  * Testes unitários para RegisterUseCase
  *
  * Cenários testados:
+ * - Capitaliza o nome antes de persistir
  * - Normaliza e-mail, CPF e telefone antes de persistir
  * - Faz hash da senha antes de enviar ao repositório (nunca persiste texto puro)
- * - Retorna os dados criados sem senha
+ * - Retorna só id e role (nunca nome/e-mail/senha)
  * - Propaga EmailAlreadyRegisteredError lançado pelo repositório, sem mascará-lo
  * - Propaga CpfAlreadyRegisteredError lançado pelo repositório, sem mascará-lo
  */
@@ -42,6 +43,27 @@ describe('RegisterUseCase', () => {
       compare: jest.fn()
     }
     useCase = new RegisterUseCase(userRepository, passwordHasher)
+  })
+
+  it('capitaliza o nome antes de persistir', async () => {
+    userRepository.create.mockResolvedValue(
+      new User({
+        id: 'user-1',
+        name: 'Maria da Silva',
+        email: 'fulano@example.com',
+        passwordHash: 'hashed-password',
+        cpf: '52998224725',
+        phone: '11912345678',
+        birthDate: input.birthDate,
+        authProviders: [],
+        role: UserRole.Seller,
+        createdAt: new Date()
+      })
+    )
+
+    await useCase.execute({ ...input, name: '  MARIA da SILVA  ' })
+
+    expect(userRepository.create).toHaveBeenCalledWith(expect.objectContaining({ name: 'Maria da Silva' }))
   })
 
   it('normaliza e-mail, CPF e telefone antes de persistir', async () => {
@@ -93,8 +115,7 @@ describe('RegisterUseCase', () => {
     expect(userRepository.create).toHaveBeenCalledWith(expect.objectContaining({ passwordHash: 'hashed-password' }))
   })
 
-  it('retorna os dados criados sem senha', async () => {
-    const createdAt = new Date('2026-01-01T00:00:00.000Z')
+  it('retorna só id e role (nunca nome/e-mail/senha)', async () => {
     userRepository.create.mockResolvedValue(
       new User({
         id: 'user-1',
@@ -106,21 +127,13 @@ describe('RegisterUseCase', () => {
         birthDate: input.birthDate,
         authProviders: [],
         role: UserRole.Seller,
-        createdAt
+        createdAt: new Date()
       })
     )
 
     const result = await useCase.execute(input)
 
-    expect(result).toEqual({
-      id: 'user-1',
-      name: 'Fulano',
-      email: 'fulano@example.com',
-      birthDate: input.birthDate,
-      role: UserRole.Seller,
-      createdAt
-    })
-    expect(result).not.toHaveProperty('passwordHash')
+    expect(result).toEqual({ id: 'user-1', role: UserRole.Seller })
   })
 
   it('propaga EmailAlreadyRegisteredError lançado pelo repositório', async () => {

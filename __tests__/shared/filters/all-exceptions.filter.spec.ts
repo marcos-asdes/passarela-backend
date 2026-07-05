@@ -6,7 +6,9 @@
  * - Retorna { statusCode: 409, message } genérico ao cliente para um conflito (ex.: e-mail/CPF duplicado)
  * - Retorna { statusCode: 500, message } genérico ao cliente para um erro não-HTTP (Error cru)
  * - Nunca inclui a mensagem interna do erro na resposta ao cliente
- * - Loga objeto detalhado ({ message, error }) via AppLoggerService para toda exceção capturada
+ * - Loga mensagem e stack via AppLoggerService.error(), com contexto "AllExceptionsFilter", para toda
+ *   exceção capturada
+ * - Loga mensagem genérica (sem stack) quando a exceção capturada não é uma instância de Error
  */
 
 import { ArgumentsHost, ConflictException, NotFoundException } from '@nestjs/common'
@@ -20,7 +22,7 @@ describe('AllExceptionsFilter', () => {
   let host: ArgumentsHost
 
   beforeEach(() => {
-    logger = { logError: jest.fn() } as unknown as jest.Mocked<AppLoggerService>
+    logger = { error: jest.fn() } as unknown as jest.Mocked<AppLoggerService>
     filter = new AllExceptionsFilter(logger)
 
     response = { status: jest.fn().mockReturnThis(), json: jest.fn() }
@@ -62,12 +64,22 @@ describe('AllExceptionsFilter', () => {
   })
 
   describe('logging do lado do servidor', () => {
-    it('chama o logger com objeto detalhado contendo message e error original', () => {
+    it('loga mensagem e stack via error(), com contexto AllExceptionsFilter', () => {
       const error = new Error('falha interna sensível')
 
       filter.catch(error, host)
 
-      expect(logger.logError).toHaveBeenCalledWith({ message: 'falha interna sensível', error })
+      expect(logger.error).toHaveBeenCalledWith('falha interna sensível', error.stack, 'AllExceptionsFilter')
+    })
+
+    it('loga mensagem genérica sem stack quando a exceção não é uma instância de Error', () => {
+      filter.catch({ code: 11000 }, host)
+
+      expect(logger.error).toHaveBeenCalledWith(
+        'Exceção não tratada capturada pelo filtro global',
+        undefined,
+        'AllExceptionsFilter'
+      )
     })
   })
 })
