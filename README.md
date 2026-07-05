@@ -49,14 +49,18 @@ make down
 
 Comandos mais usados:
 
-- `make up` / `make up-build`
-- `make down`
+- `make up` / `make up-build` — sobe em background (sem logs; use `make logs` à parte)
+- `make start` / `make start-build` — sobe em primeiro plano, com logs ao vivo (Ctrl+C derruba)
+- `make build` — builda as imagens sem subir
+- `make down` / `make restart`
 - `make logs`
 - `make ps`
 - `make shell`
 - `make test`
 - `make lint`
-- `make prune`
+- `make clean` — down com remoção de containers órfãos
+- `make prune` — clean + remove volumes (apaga dados do Mongo)
+- `make rebuild` — rebuild sem cache
 
 Também da para escolher o servico nos logs:
 

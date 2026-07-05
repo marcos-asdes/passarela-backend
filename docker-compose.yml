@@ -32,8 +32,8 @@ services:
     container_name: passarela-mongo
     # MONGO_LOG_PATH controla visibilidade do log na fonte (mongod), não no driver do Docker —
     # isso apaga o log tanto de "docker compose logs" quanto do attach ao vivo ("docker compose up" sem -d).
-    # Padrão /dev/stdout (visível). Setar /dev/null no .env para silenciar.
-    command: ["mongod", "--quiet", "--logpath", "${MONGO_LOG_PATH:-/dev/stdout}"]
+    # Padrão /dev/null (silencioso). Setar MONGO_LOG_PATH=/dev/stdout no .env pra ver o log do mongod.
+    command: ["mongod", "--quiet", "--logpath", "${MONGO_LOG_PATH:-/dev/null}"]
     ports:
       - "27019:27017"
     environment:

@@ -11,7 +11,8 @@ Backend do **Passarela**, MVP de uma plataforma onde lojistas de um shopping pub
 5. [Convenções de Código](#convenções-de-código)
 6. [Testes](#testes)
 7. [Docker](#docker)
-8. [Idioma](#idioma)
+8. [Planejamento](#planejamento)
+9. [Idioma](#idioma)
 
 ---
 
@@ -142,6 +143,17 @@ npm run start:dev
 ```
 
 `docker-compose.yml` tem os serviços `api` e `mongo` (imagem `mongo:8.0`, porta host `27019` — não a `27017` padrão, pra não colidir com outro MongoDB rodando local/dockerizado na máquina). `api` só sobe depois do `mongo` ficar saudável (`depends_on: condition: service_healthy`).
+
+---
+
+## Planejamento
+
+Todo plano de implementação (modo de planejamento do Claude Code) é salvo em
+`backend/.claude/plans/*.md` — nunca no diretório global de planos do usuário. Nome do
+arquivo em pt-BR kebab-case (ex.: `plano-auth.md`, `plano-logs-estruturados.md`),
+formato livre mas geralmente com seções Contexto/Design/Arquivos/Testes/Verificação (ver
+arquivos existentes na pasta pra estilo). Isso mantém o histórico de decisões de
+arquitetura versionado junto do código, não perdido numa pasta fora do repo.
 
 ---
 
