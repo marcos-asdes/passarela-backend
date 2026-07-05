@@ -7,8 +7,9 @@ export class AppController {
   @Get()
   getInfo(): IApiInfoResponse {
     return {
-      message: 'Hello World',
-      service: 'passarela-backend'
+      message: 'Servidor Passarela em execução',
+      service: 'passarela-backend',
+      timestamp: new Date().toISOString()
     }
   }
 }

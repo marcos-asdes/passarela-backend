@@ -2,4 +2,5 @@
 export interface IApiInfoResponse {
   message: string
   service: string
+  timestamp: string
 }
