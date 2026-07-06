@@ -32,7 +32,9 @@
       "@database/*": ["src/database/*"],
       "@shared": ["src/shared"],
       "@shared/*": ["src/shared/*"],
-      "@auth/*": ["src/modules/auth/*"]
+      "@auth/*": ["src/modules/auth/*"],
+      "@offers/*": ["src/modules/offers/*"],
+      "@interest/*": ["src/modules/interest/*"]
     }
   },
   "include": ["src/**/*.ts", "__tests__/**/*.ts"],

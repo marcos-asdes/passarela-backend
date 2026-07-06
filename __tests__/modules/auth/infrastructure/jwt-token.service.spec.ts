@@ -32,7 +32,7 @@ describe('JwtTokenService', () => {
     it('produz um token assinado com o algoritmo HS256', () => {
       const service = buildService('1h')
 
-      const token = service.sign({ sub: 'user-1', role: UserRole.Seller, jti: 'session-1' })
+      const token = service.sign({ sub: 'user-1', role: UserRole.Merchant, jti: 'session-1' })
 
       expect(decodeHeader(token).alg).toBe('HS256')
     })
@@ -40,11 +40,11 @@ describe('JwtTokenService', () => {
     it('o token decodificado contém exatamente os claims sub, role e jti informados', () => {
       const service = buildService('1h')
 
-      const token = service.sign({ sub: 'user-1', role: UserRole.Seller, jti: 'session-1' })
+      const token = service.sign({ sub: 'user-1', role: UserRole.Merchant, jti: 'session-1' })
       const payload = jwtService.decode(token) as Record<string, unknown>
 
       expect(payload.sub).toBe('user-1')
-      expect(payload.role).toBe(UserRole.Seller)
+      expect(payload.role).toBe(UserRole.Merchant)
       expect(payload.jti).toBe('session-1')
     })
   })

@@ -12,7 +12,7 @@ import { IsEmail, IsEnum, IsString, Matches, MaxLength, MinLength } from 'class-
  */
 const PASSWORD_COMPOSITION_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).+$/
 
-/** Corpo de POST /auth/register — pros dois papéis (seller/customer) */
+/** Corpo de POST /auth/register — pros dois papéis (merchant/shopper) */
 export class RegisterDto {
   @ApiProperty({ description: 'Nome completo', example: 'Fulano de Tal', minLength: 2, maxLength: 120 })
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
@@ -60,7 +60,7 @@ export class RegisterDto {
   @Match('password')
   confirmPassword!: string
 
-  @ApiProperty({ description: 'Papel da conta', enum: UserRole, example: UserRole.Seller })
+  @ApiProperty({ description: 'Papel da conta', enum: UserRole, example: UserRole.Merchant })
   @IsEnum(UserRole)
   role!: UserRole
 }

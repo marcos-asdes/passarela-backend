@@ -6,9 +6,17 @@ Backend em NestJS 11, arquitetura DDD, containerizado com Docker (com fast refre
 
 ## Estado atual
 
-Terceiro commit: bounded context **auth** — registro/login (seller/customer) com JWT, senha via argon2id, sessão controlada pelo banco (revogável) e documentação Swagger em `/docs`. Offers, interest e notificação em tempo real (WebSocket) serão adicionados em commits incrementais seguintes.
+MVP completo do desafio: bounded context **auth** (registro/login `merchant`/`shopper` com JWT, senha via argon2id, sessão controlada pelo banco/revogável), **offers** (CRUD pelo merchant + listagem pública com filtro por status) e **interest** (shopper registra interesse, estoque decrementa atomicamente), com **notificação em tempo real via WebSocket** (Socket.IO) quando uma offer nova é publicada e um **job agendado** que expira offers vencidas. Documentação Swagger em `/docs`.
 
-Decisões e trade-offs completos de arquitetura estão documentados em [`.claude/CLAUDE.md`](.claude/CLAUDE.md) — vale a leitura antes de propor mudanças estruturais.
+Decisões e trade-offs completos de arquitetura estão documentados em [`.claude/CLAUDE.md`](.claude/CLAUDE.md) e nos planos em [`.claude/plans/`](.claude/plans/) — vale a leitura antes de propor mudanças estruturais.
+
+### Decisões técnicas e trade-offs assumidos
+
+- **Estoque decrementado atomicamente** (`findOneAndUpdate` condicional no Mongo, não um read-then-write em memória) — evita oversell sob concorrência (dois shoppers registrando interest ao mesmo tempo na última unidade).
+- **Sem transação Mongo real** no registro de interest: o fluxo insere o registro de interest primeiro (o índice único `{offerId, shopperId}` garante "1 por shopper/offer" mesmo sob corrida) e, se o decremento de estoque falhar depois, desfaz esse insert manualmente. Uma transação multi-documento de verdade exigiria um replica set, que o `docker-compose` deste desafio não provisiona — trade-off consciente de escopo/tempo, não descuido.
+- **Fronteira deliberada entre `offers` e `interest`**: os dois bounded contexts só se comunicam via dois adapters de infraestrutura que leem o *schema* um do outro (nunca lógica de negócio/use case), evitando um ciclo de módulos Nest. Detalhado no `CLAUDE.md`.
+- **WebSocket sem autenticação no handshake**: o namespace `/offers` faz broadcast público pra qualquer socket conectado. Suficiente pro escopo do desafio (o evento não carrega dado sensível); produção exigiria JWT no handshake e salas por shopper.
+- **Expiração de offers via cron** (`@nestjs/schedule`, a cada minuto) em vez de computar "expirada" só na leitura — persiste a transição no banco, então o dashboard/feed refletem o status real mesmo sem uma requisição de leitura recente.
 
 ## Stack Tecnológica
 
@@ -16,6 +24,8 @@ Decisões e trade-offs completos de arquitetura estão documentados em [`.claude
 - **NestJS 11** com **SWC** (build rápido)
 - **MongoDB** via **Mongoose**
 - **Segurança**: helmet, CORS, rate limiting (`@nestjs/throttler`), JWT (`@nestjs/jwt`/`passport-jwt`), hash de senha `argon2id`
+- **Tempo real**: WebSocket via Socket.IO (`@nestjs/websockets`/`@nestjs/platform-socket.io`)
+- **Job agendado**: `@nestjs/schedule` (expiração de offers)
 - **Documentação**: Swagger/OpenAPI (`@nestjs/swagger`) em `/docs`
 - **Jest** + `@swc/jest` para testes
 - **Docker** / Docker Compose (com fast refresh em desenvolvimento)
@@ -30,8 +40,15 @@ docker compose up --build
 A API fica disponível em `http://localhost:3000` (porta do host mapeada em `docker-compose.yml` — ajuste se `3000` estiver ocupada na sua máquina):
 
 - `GET /` — confirma que a API está no ar (hello-world)
-- `POST /auth/register` — cria conta (seller/customer), não emite token
+- `POST /auth/register` — cria conta (`merchant`/`shopper`), não emite token
 - `POST /auth/login` — autentica e retorna o JWT
+- `POST /offers` — merchant publica uma offer (autenticado, dispara `offer:created` no WebSocket)
+- `PATCH /offers/:id` — merchant edita uma offer própria (só enquanto `Active`)
+- `POST /offers/:id/close` — merchant encerra uma offer própria manualmente
+- `GET /offers/mine` — dashboard do merchant, offers próprias com contagem de interest
+- `GET /offers?status=` — feed público, sem autenticação (default só `active`)
+- `POST /interest` — shopper registra interest numa offer (autenticado, decrementa estoque)
+- **WebSocket** `ws://localhost:3000/offers` (namespace Socket.IO) — evento `offer:created`
 - `GET /docs` — documentação Swagger/OpenAPI interativa
 
 Qualquer alteração em `src/` reinicia a aplicação automaticamente, sem rebuild manual da imagem.
@@ -120,6 +137,8 @@ Zero imports relativos — sempre via alias. Tabela completa (cresce conforme no
 | `@database`, `@database/*` | `src/database` |
 | `@shared`, `@shared/*` | `src/shared` |
 | `@auth/*` | `src/modules/auth/*` |
+| `@offers/*` | `src/modules/offers/*` |
+| `@interest/*` | `src/modules/interest/*` |
 
 ## Licença
 

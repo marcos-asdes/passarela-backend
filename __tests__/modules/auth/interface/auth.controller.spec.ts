@@ -40,7 +40,7 @@ describe('AuthController', () => {
     birthDate: new Date('1990-05-10'),
     password: 'Senha@Forte123',
     confirmPassword: 'Senha@Forte123',
-    role: UserRole.Seller
+    role: UserRole.Merchant
   }
 
   const loginDto: LoginDto = { email: 'fulano@example.com', password: 'Senha@Forte123' }
@@ -54,7 +54,7 @@ describe('AuthController', () => {
 
   describe('register', () => {
     it('em caso de sucesso, retorna só uma mensagem informativa (nunca dados do usuário)', async () => {
-      registerUseCase.execute.mockResolvedValue({ id: 'user-1', role: UserRole.Seller })
+      registerUseCase.execute.mockResolvedValue({ id: 'user-1', role: UserRole.Merchant })
 
       const result = await controller.register(registerDto)
 
@@ -79,11 +79,11 @@ describe('AuthController', () => {
     })
 
     it('loga sucesso com id+role', async () => {
-      registerUseCase.execute.mockResolvedValue({ id: 'user-1', role: UserRole.Seller })
+      registerUseCase.execute.mockResolvedValue({ id: 'user-1', role: UserRole.Merchant })
 
       await controller.register(registerDto)
 
-      expect(logger.log).toHaveBeenCalledWith('Usuário registrado (id: user-1, role: seller)', 'AuthController')
+      expect(logger.log).toHaveBeenCalledWith('Usuário registrado (id: user-1, role: merchant)', 'AuthController')
     })
 
     it('loga tentativa de e-mail já cadastrado com o e-mail, nunca o CPF', async () => {
@@ -112,14 +112,14 @@ describe('AuthController', () => {
     it('em caso de sucesso, retorna accessToken + id/role (nunca nome/e-mail/CPF)', async () => {
       loginUseCase.execute.mockResolvedValue({
         accessToken: 'signed-token',
-        user: { id: 'user-1', role: UserRole.Seller }
+        user: { id: 'user-1', role: UserRole.Merchant }
       })
 
       const result = await controller.login(loginDto)
 
       expect(result).toEqual({
         accessToken: 'signed-token',
-        user: { id: 'user-1', role: UserRole.Seller }
+        user: { id: 'user-1', role: UserRole.Merchant }
       })
       expect(result.user).not.toHaveProperty('name')
       expect(result.user).not.toHaveProperty('email')
@@ -135,12 +135,12 @@ describe('AuthController', () => {
     it('loga sucesso com id+role', async () => {
       loginUseCase.execute.mockResolvedValue({
         accessToken: 'signed-token',
-        user: { id: 'user-1', role: UserRole.Seller }
+        user: { id: 'user-1', role: UserRole.Merchant }
       })
 
       await controller.login(loginDto)
 
-      expect(logger.log).toHaveBeenCalledWith('Login realizado (id: user-1, role: seller)', 'AuthController')
+      expect(logger.log).toHaveBeenCalledWith('Login realizado (id: user-1, role: merchant)', 'AuthController')
     })
 
     it('loga tentativa de credenciais inválidas com o e-mail, nunca a senha', async () => {

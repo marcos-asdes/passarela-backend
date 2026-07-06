@@ -31,7 +31,7 @@ function buildDocument(overrides: Partial<UserDocument> = {}): UserDocument {
     phone: '11912345678',
     birthDate: new Date('1990-05-10'),
     authProviders: [],
-    role: UserRole.Seller,
+    role: UserRole.Merchant,
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     ...overrides
   } as unknown as UserDocument
@@ -48,7 +48,7 @@ describe('UserRepository', () => {
     cpf: '52998224725',
     phone: '11912345678',
     birthDate: new Date('1990-05-10'),
-    role: UserRole.Seller
+    role: UserRole.Merchant
   }
 
   beforeEach(() => {

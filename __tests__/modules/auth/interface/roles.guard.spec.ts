@@ -32,18 +32,18 @@ describe('RolesGuard', () => {
   it('permite acesso quando a rota não declara @Roles()', () => {
     reflector.getAllAndOverride.mockReturnValue(undefined)
 
-    expect(guard.canActivate(buildContext({ id: 'user-1', role: UserRole.Customer }))).toBe(true)
+    expect(guard.canActivate(buildContext({ id: 'user-1', role: UserRole.Shopper }))).toBe(true)
   })
 
   it('permite acesso quando request.user.role está entre os papéis exigidos', () => {
-    reflector.getAllAndOverride.mockReturnValue([UserRole.Seller])
+    reflector.getAllAndOverride.mockReturnValue([UserRole.Merchant])
 
-    expect(guard.canActivate(buildContext({ id: 'user-1', role: UserRole.Seller }))).toBe(true)
+    expect(guard.canActivate(buildContext({ id: 'user-1', role: UserRole.Merchant }))).toBe(true)
   })
 
   it('nega acesso quando request.user.role não está entre os papéis exigidos', () => {
-    reflector.getAllAndOverride.mockReturnValue([UserRole.Seller])
+    reflector.getAllAndOverride.mockReturnValue([UserRole.Merchant])
 
-    expect(() => guard.canActivate(buildContext({ id: 'user-1', role: UserRole.Customer }))).toThrow(ForbiddenException)
+    expect(() => guard.canActivate(buildContext({ id: 'user-1', role: UserRole.Shopper }))).toThrow(ForbiddenException)
   })
 })

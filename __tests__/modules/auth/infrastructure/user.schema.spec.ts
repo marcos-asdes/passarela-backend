@@ -27,7 +27,7 @@ function buildValidData(overrides: Record<string, unknown> = {}) {
     cpf: '52998224725',
     phone: '11912345678',
     birthDate: new Date('1990-05-10'),
-    role: UserRole.Seller,
+    role: UserRole.Merchant,
     ...overrides
   }
 }

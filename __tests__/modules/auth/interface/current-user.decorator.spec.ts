@@ -11,7 +11,7 @@ import { getCurrentUserFromContext } from '@auth/interface/current-user.decorato
 
 describe('getCurrentUserFromContext', () => {
   it('extrai request.user a partir do ExecutionContext', () => {
-    const user = { id: 'user-1', role: UserRole.Customer }
+    const user = { id: 'user-1', role: UserRole.Shopper }
     const context = {
       switchToHttp: () => ({ getRequest: () => ({ user }) })
     } as unknown as ExecutionContext

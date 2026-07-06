@@ -29,7 +29,7 @@ describe('RegisterUseCase', () => {
     cpf: '529.982.247-25',
     phone: '(11) 91234-5678',
     birthDate: new Date('1990-05-10'),
-    role: UserRole.Seller
+    role: UserRole.Merchant
   }
 
   beforeEach(() => {
@@ -56,7 +56,7 @@ describe('RegisterUseCase', () => {
         phone: '11912345678',
         birthDate: input.birthDate,
         authProviders: [],
-        role: UserRole.Seller,
+        role: UserRole.Merchant,
         createdAt: new Date()
       })
     )
@@ -77,7 +77,7 @@ describe('RegisterUseCase', () => {
         phone: '11912345678',
         birthDate: input.birthDate,
         authProviders: [],
-        role: UserRole.Seller,
+        role: UserRole.Merchant,
         createdAt: new Date()
       })
     )
@@ -104,7 +104,7 @@ describe('RegisterUseCase', () => {
         phone: '11912345678',
         birthDate: input.birthDate,
         authProviders: [],
-        role: UserRole.Seller,
+        role: UserRole.Merchant,
         createdAt: new Date()
       })
     )
@@ -126,14 +126,14 @@ describe('RegisterUseCase', () => {
         phone: '11912345678',
         birthDate: input.birthDate,
         authProviders: [],
-        role: UserRole.Seller,
+        role: UserRole.Merchant,
         createdAt: new Date()
       })
     )
 
     const result = await useCase.execute(input)
 
-    expect(result).toEqual({ id: 'user-1', role: UserRole.Seller })
+    expect(result).toEqual({ id: 'user-1', role: UserRole.Merchant })
   })
 
   it('propaga EmailAlreadyRegisteredError lançado pelo repositório', async () => {

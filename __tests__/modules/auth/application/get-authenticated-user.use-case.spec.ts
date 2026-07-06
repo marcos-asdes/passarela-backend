@@ -19,7 +19,7 @@ describe('GetAuthenticatedUserUseCase', () => {
   let sessionRepository: jest.Mocked<ISessionRepository>
   let useCase: GetAuthenticatedUserUseCase
 
-  const payload: IJwtPayload = { sub: 'user-1', role: UserRole.Seller, jti: 'session-1' }
+  const payload: IJwtPayload = { sub: 'user-1', role: UserRole.Merchant, jti: 'session-1' }
 
   const activeSession = new Session({
     id: 'session-1',
@@ -38,7 +38,7 @@ describe('GetAuthenticatedUserUseCase', () => {
     phone: '11912345678',
     birthDate: new Date('1990-05-10'),
     authProviders: [],
-    role: UserRole.Seller,
+    role: UserRole.Merchant,
     createdAt: new Date()
   })
 
@@ -54,7 +54,7 @@ describe('GetAuthenticatedUserUseCase', () => {
 
     const result = await useCase.execute(payload)
 
-    expect(result).toEqual({ id: 'user-1', role: UserRole.Seller })
+    expect(result).toEqual({ id: 'user-1', role: UserRole.Merchant })
   })
 
   it('retorna null quando a sessão não existe/foi revogada/expirou', async () => {

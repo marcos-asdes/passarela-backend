@@ -43,7 +43,7 @@ describe('LoginUseCase', () => {
       phone: '11912345678',
       birthDate: new Date('1990-05-10'),
       authProviders: [],
-      role: UserRole.Customer,
+      role: UserRole.Shopper,
       createdAt: new Date(),
       ...overrides
     })
@@ -83,7 +83,7 @@ describe('LoginUseCase', () => {
     expect(sessionRepository.create).toHaveBeenCalledWith({ userId: 'user-1', expiresAt: expect.any(Date) })
     expect(result).toEqual({
       accessToken: 'signed-token',
-      user: { id: 'user-1', role: UserRole.Customer }
+      user: { id: 'user-1', role: UserRole.Shopper }
     })
   })
 
@@ -103,7 +103,7 @@ describe('LoginUseCase', () => {
 
     await useCase.execute(input)
 
-    expect(tokenService.sign).toHaveBeenCalledWith({ sub: 'user-1', role: UserRole.Customer, jti: 'session-abc' })
+    expect(tokenService.sign).toHaveBeenCalledWith({ sub: 'user-1', role: UserRole.Shopper, jti: 'session-abc' })
   })
 
   it('lança InvalidCredentialsError quando o e-mail não existe', async () => {

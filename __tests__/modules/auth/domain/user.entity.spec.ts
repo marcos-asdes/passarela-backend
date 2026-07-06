@@ -26,7 +26,7 @@ describe('User', () => {
         phone: '11912345678',
         birthDate,
         authProviders: [],
-        role: UserRole.Seller,
+        role: UserRole.Merchant,
         createdAt
       })
 
@@ -38,7 +38,7 @@ describe('User', () => {
       expect(user.phone).toBe('11912345678')
       expect(user.birthDate).toBe(birthDate)
       expect(user.authProviders).toEqual([])
-      expect(user.role).toBe(UserRole.Seller)
+      expect(user.role).toBe(UserRole.Merchant)
       expect(user.createdAt).toBe(createdAt)
     })
 
@@ -51,7 +51,7 @@ describe('User', () => {
         phone: '11912345678',
         birthDate: new Date(),
         authProviders: [{ provider: 'github', providerId: 'gh-1' }],
-        role: UserRole.Customer,
+        role: UserRole.Shopper,
         createdAt: new Date()
       })
 

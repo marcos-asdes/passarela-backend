@@ -12,7 +12,7 @@ import {
   USER_REPOSITORY
 } from '@auth/application/types'
 
-/** Caso de uso: registra uma nova conta local (seller ou customer) — não emite token, login é chamada separada */
+/** Caso de uso: registra uma nova conta local (merchant ou shopper) — não emite token, login é chamada separada */
 @Injectable()
 export class RegisterUseCase {
   constructor(

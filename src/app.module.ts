@@ -1,14 +1,25 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common'
+import { ScheduleModule } from '@nestjs/schedule'
 import { ConfigModule } from '@config'
 import { DatabaseModule } from '@database'
 import { SharedModule } from '@shared'
 import { RequestContextMiddleware } from '@shared/middleware/request-context.middleware'
 import { AuthModule } from '@auth/auth.module'
+import { OffersModule } from '@offers/offers.module'
+import { InterestModule } from '@interest/interest.module'
 import { AppController } from '@app/app.controller'
 
 /** Módulo raiz: composição de configuração, banco, kernel compartilhado e bounded contexts */
 @Module({
-  imports: [ConfigModule, DatabaseModule, SharedModule, AuthModule],
+  imports: [
+    ConfigModule,
+    DatabaseModule,
+    SharedModule,
+    ScheduleModule.forRoot(),
+    AuthModule,
+    OffersModule,
+    InterestModule
+  ],
   controllers: [AppController]
 })
 export class AppModule implements NestModule {

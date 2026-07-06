@@ -37,7 +37,7 @@ describe('sanitizeBody', () => {
   })
 
   it('preserva campos não sensíveis', () => {
-    expect(sanitizeBody({ name: 'Fulano', role: 'seller' })).toEqual({ name: 'Fulano', role: 'seller' })
+    expect(sanitizeBody({ name: 'Fulano', role: 'merchant' })).toEqual({ name: 'Fulano', role: 'merchant' })
   })
 
   it('sanitiza recursivamente objetos aninhados', () => {

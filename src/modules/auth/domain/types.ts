@@ -1,7 +1,7 @@
-/** Papéis suportados no cadastro — quem vende (seller) e quem compra (customer) */
+/** Papéis suportados no cadastro — quem vende (merchant) e quem compra (shopper) */
 export enum UserRole {
-  Seller = 'seller',
-  Customer = 'customer'
+  Merchant = 'merchant',
+  Shopper = 'shopper'
 }
 
 /** Provedores OAuth suportados no futuro — só o modelo de dados existe agora, o fluxo ainda não */

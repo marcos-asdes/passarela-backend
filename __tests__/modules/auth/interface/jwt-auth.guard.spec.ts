@@ -15,7 +15,7 @@ describe('JwtAuthGuard', () => {
   const guard = new JwtAuthGuard()
 
   it('retorna o usuário quando a estratégia valida com sucesso', () => {
-    const user = { id: 'user-1', role: UserRole.Seller }
+    const user = { id: 'user-1', role: UserRole.Merchant }
 
     expect(guard.handleRequest(null, user)).toBe(user)
   })

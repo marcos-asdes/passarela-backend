@@ -11,7 +11,7 @@
  * - Rejeita senha sem maiúscula/minúscula/número/caractere especial
  * - Rejeita senha com menos de 10 ou mais de 128 caracteres
  * - Rejeita quando confirmPassword é diferente de password
- * - Rejeita role fora do enum seller/customer
+ * - Rejeita role fora do enum merchant/shopper
  */
 
 import { plainToInstance } from 'class-transformer'
@@ -27,7 +27,7 @@ const validPayload: Record<string, unknown> = {
   birthDate: '1990-05-10',
   password: 'Senha@Forte123',
   confirmPassword: 'Senha@Forte123',
-  role: UserRole.Seller
+  role: UserRole.Merchant
 }
 
 function validate(payload: Record<string, unknown>) {
@@ -146,7 +146,7 @@ describe('RegisterDto', () => {
       expect(errors.some((error) => error.property === 'confirmPassword')).toBe(true)
     })
 
-    it('rejeita role fora do enum seller/customer', () => {
+    it('rejeita role fora do enum merchant/shopper', () => {
       const { errors } = validate({ ...validPayload, role: 'admin' })
 
       expect(errors.some((error) => error.property === 'role')).toBe(true)

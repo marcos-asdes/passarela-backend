@@ -25,18 +25,18 @@ describe('JwtStrategy', () => {
   })
 
   it('retorna o usuário autenticado quando o use case encontra sessão ativa + usuário', async () => {
-    getAuthenticatedUserUseCase.execute.mockResolvedValue({ id: 'user-1', role: UserRole.Seller })
+    getAuthenticatedUserUseCase.execute.mockResolvedValue({ id: 'user-1', role: UserRole.Merchant })
 
-    const result = await strategy.validate({ sub: 'user-1', role: UserRole.Seller, jti: 'session-1' })
+    const result = await strategy.validate({ sub: 'user-1', role: UserRole.Merchant, jti: 'session-1' })
 
-    expect(result).toEqual({ id: 'user-1', role: UserRole.Seller })
+    expect(result).toEqual({ id: 'user-1', role: UserRole.Merchant })
   })
 
   it('lança UnauthorizedException quando o use case nega', async () => {
     getAuthenticatedUserUseCase.execute.mockResolvedValue(null)
 
-    await expect(strategy.validate({ sub: 'user-1', role: UserRole.Seller, jti: 'session-1' })).rejects.toBeInstanceOf(
-      UnauthorizedException
-    )
+    await expect(
+      strategy.validate({ sub: 'user-1', role: UserRole.Merchant, jti: 'session-1' })
+    ).rejects.toBeInstanceOf(UnauthorizedException)
   })
 })

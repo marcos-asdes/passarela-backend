@@ -35,7 +35,7 @@ export class AuthController {
 
   @Throttle(AUTH_THROTTLE)
   @Post('register')
-  @ApiOperation({ summary: 'Cria uma conta (seller ou customer) — não emite token, faça login em seguida' })
+  @ApiOperation({ summary: 'Cria uma conta (merchant ou shopper) — não emite token, faça login em seguida' })
   @ApiCreatedResponse({ type: RegisterResponseDto })
   @ApiConflictResponse({ description: 'E-mail ou CPF já cadastrados' })
   async register(@Body() dto: RegisterDto): Promise<RegisterResponseDto> {

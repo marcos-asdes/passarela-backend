@@ -43,15 +43,15 @@ describe('LoginResponseUserDto', () => {
   it('atribui id e role corretamente', () => {
     const user = new LoginResponseUserDto()
     user.id = 'user-1'
-    user.role = UserRole.Customer
+    user.role = UserRole.Shopper
 
-    expect(user).toEqual({ id: 'user-1', role: UserRole.Customer })
+    expect(user).toEqual({ id: 'user-1', role: UserRole.Shopper })
   })
 })
 
 describe('LoginResponseDto', () => {
   it('atribui accessToken e user corretamente, satisfazendo ILoginResponse', () => {
-    const user = Object.assign(new LoginResponseUserDto(), { id: 'user-1', role: UserRole.Seller })
+    const user = Object.assign(new LoginResponseUserDto(), { id: 'user-1', role: UserRole.Merchant })
 
     const dto = Object.assign(new LoginResponseDto(), { accessToken: 'jwt-fake', user })
 
@@ -73,7 +73,7 @@ describe('LoginResponseDto', () => {
       const properties = schemas.LoginResponseUserDto.properties ?? {}
 
       expect(properties.id).toMatchObject({ type: 'string' })
-      expect(properties.role.enum).toEqual(expect.arrayContaining([UserRole.Seller, UserRole.Customer]))
+      expect(properties.role.enum).toEqual(expect.arrayContaining([UserRole.Merchant, UserRole.Shopper]))
     })
 
     it('nunca expõe nome, e-mail, cpf, telefone ou senha no schema gerado', async () => {
