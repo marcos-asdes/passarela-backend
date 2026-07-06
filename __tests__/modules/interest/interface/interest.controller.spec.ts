@@ -9,10 +9,13 @@
  * - register: não emite 'interest:changed' quando o use case falha
  * - remove: em caso de sucesso, emite 'interest:changed'
  * - remove: converte InterestNotFoundError em NotFoundException e não emite 'interest:changed'
+ * - remove: propaga qualquer outro erro sem alterá-lo
+ * - listMine: retorna os interests do shopper autenticado mapeados pra { id, offerId }
  */
 
 import { RegisterInterestUseCase } from '@interest/application/register-interest.use-case'
 import { RemoveInterestUseCase } from '@interest/application/remove-interest.use-case'
+import { IInterestRepository } from '@interest/application/types'
 import { AlreadyInterestedError } from '@interest/domain/already-interested.error'
 import { InterestNotFoundError } from '@interest/domain/interest-not-found.error'
 import { Interest } from '@interest/domain/interest.entity'
@@ -25,6 +28,7 @@ import { DomainEventsService } from '@shared/realtime/domain-events.service'
 describe('InterestController', () => {
   let registerInterestUseCase: jest.Mocked<RegisterInterestUseCase>
   let removeInterestUseCase: jest.Mocked<RemoveInterestUseCase>
+  let interestRepository: jest.Mocked<IInterestRepository>
   let domainEvents: jest.Mocked<DomainEventsService>
   let controller: InterestController
 
@@ -34,16 +38,17 @@ describe('InterestController', () => {
   beforeEach(() => {
     registerInterestUseCase = { execute: jest.fn() } as unknown as jest.Mocked<RegisterInterestUseCase>
     removeInterestUseCase = { execute: jest.fn() } as unknown as jest.Mocked<RemoveInterestUseCase>
+    interestRepository = {
+      findByShopperId: jest.fn(),
+      findByOfferAndShopper: jest.fn(),
+      create: jest.fn(),
+      deleteById: jest.fn()
+    }
     domainEvents = { emit: jest.fn() } as unknown as jest.Mocked<DomainEventsService>
     controller = new InterestController(
       registerInterestUseCase,
       removeInterestUseCase,
-      {
-        findByShopperId: jest.fn(),
-        findByOfferAndShopper: jest.fn(),
-        create: jest.fn(),
-        deleteById: jest.fn()
-      },
+      interestRepository,
       domainEvents
     )
   })
@@ -105,6 +110,26 @@ describe('InterestController', () => {
       await expect(controller.remove(user, 'offer-1')).rejects.toBeInstanceOf(NotFoundException)
 
       expect(domainEvents.emit).not.toHaveBeenCalled()
+    })
+
+    it('propaga qualquer outro erro sem alterá-lo', async () => {
+      const otherError = new Error('falha inesperada')
+      removeInterestUseCase.execute.mockRejectedValue(otherError)
+
+      await expect(controller.remove(user, 'offer-1')).rejects.toBe(otherError)
+    })
+  })
+
+  describe('listMine', () => {
+    it('retorna os interests do shopper autenticado mapeados pra { id, offerId }', async () => {
+      interestRepository.findByShopperId.mockResolvedValue([
+        new Interest({ id: 'interest-1', offerId: 'offer-1', shopperId: 'shopper-1', createdAt: new Date() })
+      ])
+
+      const result = await controller.listMine(user)
+
+      expect(interestRepository.findByShopperId).toHaveBeenCalledWith('shopper-1')
+      expect(result).toEqual([{ id: 'interest-1', offerId: 'offer-1' }])
     })
   })
 })

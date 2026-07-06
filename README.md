@@ -2,6 +2,12 @@
   <img src="docs/logo.png" alt="Passarela" width="360" />
 </p>
 
+<p align="center">
+  <a href="https://github.com/marcos-asdes/passarela-backend/actions/workflows/deploy.yml">
+    <img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/marcos-asdes/passarela-backend/main/badges/coverage.json" alt="Cobertura de testes" />
+  </a>
+</p>
+
 API de uma plataforma onde **merchants** de um shopping publicam flash deals e **shoppers** acompanham em tempo real as promoções ativas, podendo registrar interesse. Projeto desenvolvido em resposta a um desafio técnico para vaga de desenvolvedor fullstack pleno.
 
 ## O Desafio

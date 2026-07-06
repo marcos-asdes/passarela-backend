@@ -7,6 +7,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -15,7 +17,25 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run lint
-      - run: npm run test
+      - run: npm run test:cov
+
+      - name: Publica % de cobertura no job summary e atualiza dados do badge
+        run: node .github/scripts/coverage-summary.mjs
+
+      - name: Sobe relatório HTML de cobertura como artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 14
+
+      - name: Commita o badge de cobertura atualizado
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add badges/coverage.json
+          git diff --cached --quiet || git commit -m "chore: atualiza badge de cobertura de testes [skip ci]"
+          git push
 
   build-and-deploy:
     needs: test

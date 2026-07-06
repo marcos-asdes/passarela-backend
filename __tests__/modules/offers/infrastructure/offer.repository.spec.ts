@@ -14,11 +14,11 @@
  * - expireOverdue() devolve modifiedCount do updateMany
  */
 
-import { Model } from 'mongoose'
-import { OfferStatus } from '@offers/domain/types'
 import { ICreateOfferData } from '@offers/application/types'
-import { OfferDocument } from '@offers/infrastructure/types'
+import { OfferStatus } from '@offers/domain/types'
 import { OfferRepository } from '@offers/infrastructure/offer.repository'
+import { OfferDocument } from '@offers/infrastructure/types'
+import { Model } from 'mongoose'
 
 function buildDocument(overrides: Partial<OfferDocument> = {}): OfferDocument {
   return {
@@ -127,7 +127,7 @@ describe('OfferRepository', () => {
   describe('update', () => {
     it('traduz o documento atualizado em Offer', async () => {
       offerModel.findByIdAndUpdate.mockReturnValue({
-        exec: jest.fn().mockResolvedValue(buildDocument({ title: 'Novo título' } as never))
+        exec: jest.fn().mockResolvedValue(buildDocument({ title: 'Novo título' }))
       } as never)
 
       const offer = await repository.update('offer-1', { title: 'Novo título' })

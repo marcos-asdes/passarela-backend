@@ -38,7 +38,9 @@ const config: Config = {
   },
   collectCoverageFrom: ['src/**/*.ts', '!src/main.ts', '!src/**/types.ts', '!src/**/*.module.ts'],
   coverageDirectory: './coverage',
-  coverageProvider: 'v8'
+  coverageProvider: 'v8',
+  // json-summary alimenta o script de CI que publica % no job summary e atualiza o badge do README
+  coverageReporters: ['text', 'lcov', 'html', 'json-summary']
 }
 
 export default config

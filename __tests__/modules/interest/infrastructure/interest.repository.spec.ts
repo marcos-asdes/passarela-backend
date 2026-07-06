@@ -6,6 +6,9 @@
  * - create() traduz erro de chave duplicada (code 11000) em AlreadyInterestedError
  * - create() propaga qualquer outro erro do Mongo sem alterá-lo
  * - deleteById() remove o documento pelo id
+ * - findByShopperId() traduz os documentos encontrados em Interest[]
+ * - findByOfferAndShopper() traduz o documento encontrado em Interest
+ * - findByOfferAndShopper() retorna null quando não encontrado
  */
 
 import { Model } from 'mongoose'
@@ -33,7 +36,9 @@ describe('InterestRepository', () => {
   beforeEach(() => {
     interestModel = {
       create: jest.fn(),
-      deleteOne: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue({}) })
+      deleteOne: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue({}) }),
+      find: jest.fn(),
+      findOne: jest.fn()
     } as unknown as jest.Mocked<Model<InterestDocument>>
     repository = new InterestRepository(interestModel)
   })
@@ -68,6 +73,39 @@ describe('InterestRepository', () => {
       await repository.deleteById('interest-1')
 
       expect(interestModel.deleteOne).toHaveBeenCalledWith({ _id: 'interest-1' })
+    })
+  })
+
+  describe('findByShopperId', () => {
+    it('traduz os documentos encontrados em Interest[]', async () => {
+      interestModel.find.mockReturnValue({
+        lean: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue([buildDocument()]) })
+      } as never)
+
+      const result = await repository.findByShopperId('shopper-1')
+
+      expect(interestModel.find).toHaveBeenCalledWith({ shopperId: 'shopper-1' })
+      expect(result).toHaveLength(1)
+      expect(result[0].id).toBe('interest-1')
+    })
+  })
+
+  describe('findByOfferAndShopper', () => {
+    it('traduz o documento encontrado em Interest', async () => {
+      interestModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(buildDocument()) } as never)
+
+      const result = await repository.findByOfferAndShopper('offer-1', 'shopper-1')
+
+      expect(interestModel.findOne).toHaveBeenCalledWith({ offerId: 'offer-1', shopperId: 'shopper-1' })
+      expect(result?.id).toBe('interest-1')
+    })
+
+    it('retorna null quando não encontrado', async () => {
+      interestModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) } as never)
+
+      const result = await repository.findByOfferAndShopper('offer-1', 'shopper-1')
+
+      expect(result).toBeNull()
     })
   })
 })
