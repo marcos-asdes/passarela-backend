@@ -3,15 +3,30 @@
  *
  * Cenários testados:
  * - chama expireOverdue com a data atual
- * - retorna a quantidade de offers expiradas pelo repository
+ * - retorna as offers expiradas pelo repository
  */
 
 import { ExpireOffersUseCase } from '@offers/application/expire-offers.use-case'
 import { IOfferRepository } from '@offers/application/types'
+import { Offer } from '@offers/domain/offer.entity'
+import { OfferStatus } from '@offers/domain/types'
 
 describe('ExpireOffersUseCase', () => {
   let offerRepository: jest.Mocked<IOfferRepository>
   let useCase: ExpireOffersUseCase
+
+  const expiredOffer = new Offer({
+    id: 'offer-1',
+    merchantId: 'merchant-1',
+    title: '50% OFF',
+    description: 'Promoção relâmpago',
+    discountPercent: 50,
+    stock: 10,
+    validUntil: new Date('2020-01-01T00:00:00.000Z'),
+    status: OfferStatus.Expired,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  })
 
   beforeEach(() => {
     offerRepository = {
@@ -22,7 +37,7 @@ describe('ExpireOffersUseCase', () => {
       findPublicFeed: jest.fn(),
       update: jest.fn(),
       updateStatus: jest.fn(),
-      expireOverdue: jest.fn().mockResolvedValue(2)
+      expireOverdue: jest.fn().mockResolvedValue([expiredOffer])
     }
     useCase = new ExpireOffersUseCase(offerRepository)
   })
@@ -36,8 +51,8 @@ describe('ExpireOffersUseCase', () => {
     expect(calledWith.getTime()).toBeLessThanOrEqual(Date.now())
   })
 
-  it('retorna a quantidade de offers expiradas pelo repository', async () => {
+  it('retorna as offers expiradas pelo repository', async () => {
     const result = await useCase.execute()
-    expect(result).toBe(2)
+    expect(result).toEqual([expiredOffer])
   })
 })

@@ -53,7 +53,7 @@ export class OfferRepository implements IOfferRepository {
       this.offerModel.find({ status: OfferStatus.Expired }).sort({ createdAt: -1 }).lean().exec(),
       this.offerModel.find({ status: OfferStatus.SoldOut }).sort({ createdAt: -1 }).lean().exec()
     ])
-    return [...active, ...expired, ...soldOut].map((document) => this.toDomainEntity(document as OfferDocument))
+    return [...active, ...expired, ...soldOut].map((document) => this.toDomainEntity(document))
   }
 
   async update(id: string, data: IUpdateOfferData): Promise<Offer | null> {
@@ -66,14 +66,16 @@ export class OfferRepository implements IOfferRepository {
     return document ? this.toDomainEntity(document) : null
   }
 
-  async expireOverdue(now: Date): Promise<number> {
-    const result = await this.offerModel
-      .updateMany(
-        { status: { $in: [OfferStatus.Active, OfferStatus.SoldOut] }, validUntil: { $lt: now } },
-        { $set: { status: OfferStatus.Expired } }
-      )
+  async expireOverdue(now: Date): Promise<Offer[]> {
+    const documents = await this.offerModel
+      .find({ status: { $in: [OfferStatus.Active, OfferStatus.SoldOut] }, validUntil: { $lt: now } })
       .exec()
-    return result.modifiedCount
+    if (documents.length === 0) return []
+
+    const ids = documents.map((document) => document._id)
+    await this.offerModel.updateMany({ _id: { $in: ids } }, { $set: { status: OfferStatus.Expired } }).exec()
+
+    return documents.map((document) => this.toDomainEntity(Object.assign(document, { status: OfferStatus.Expired })))
   }
 
   private toDomainEntity(document: OfferDocument): Offer {

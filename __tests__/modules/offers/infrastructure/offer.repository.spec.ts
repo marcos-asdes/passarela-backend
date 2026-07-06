@@ -11,7 +11,8 @@
  * - update() traduz o documento atualizado em Offer
  * - update() retorna null quando não encontra
  * - updateStatus() traduz o documento atualizado em Offer
- * - expireOverdue() devolve modifiedCount do updateMany
+ * - expireOverdue() atualiza e devolve as offers vencidas traduzidas em Offer[]
+ * - expireOverdue() não chama updateMany quando não há offers vencidas
  */
 
 import { ICreateOfferData } from '@offers/application/types'
@@ -167,17 +168,35 @@ describe('OfferRepository', () => {
   })
 
   describe('expireOverdue', () => {
-    it('devolve modifiedCount do updateMany', async () => {
-      offerModel.updateMany.mockReturnValue({ exec: jest.fn().mockResolvedValue({ modifiedCount: 3 }) } as never)
+    it('atualiza e devolve as offers vencidas traduzidas em Offer[]', async () => {
+      const overdueDocument = buildDocument({ status: OfferStatus.Active })
+      offerModel.find.mockReturnValue({ exec: jest.fn().mockResolvedValue([overdueDocument]) } as never)
+      offerModel.updateMany.mockReturnValue({ exec: jest.fn().mockResolvedValue({ modifiedCount: 1 }) } as never)
       const now = new Date()
 
-      const count = await repository.expireOverdue(now)
+      const result = await repository.expireOverdue(now)
 
+      expect(offerModel.find).toHaveBeenCalledWith({
+        status: { $in: [OfferStatus.Active, OfferStatus.SoldOut] },
+        validUntil: { $lt: now }
+      })
       expect(offerModel.updateMany).toHaveBeenCalledWith(
-        { status: { $in: [OfferStatus.Active, OfferStatus.SoldOut] }, validUntil: { $lt: now } },
+        { _id: { $in: [overdueDocument._id] } },
         { $set: { status: OfferStatus.Expired } }
       )
-      expect(count).toBe(3)
+      expect(result).toHaveLength(1)
+      expect(result[0].id).toBe('offer-1')
+      expect(result[0].status).toBe(OfferStatus.Expired)
+    })
+
+    it('não chama updateMany quando não há offers vencidas', async () => {
+      offerModel.find.mockReturnValue({ exec: jest.fn().mockResolvedValue([]) } as never)
+      const now = new Date()
+
+      const result = await repository.expireOverdue(now)
+
+      expect(offerModel.updateMany).not.toHaveBeenCalled()
+      expect(result).toEqual([])
     })
   })
 })

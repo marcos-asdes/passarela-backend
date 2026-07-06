@@ -31,7 +31,7 @@ export interface IOfferRepository {
   update(id: string, data: IUpdateOfferData): Promise<Offer | null>
   updateStatus(id: string, status: OfferStatus): Promise<Offer | null>
   /** Muda pra `Expired` toda offer `Active`/`SoldOut` com `validUntil` no passado — usada só pelo scheduler */
-  expireOverdue(now: Date): Promise<number>
+  expireOverdue(now: Date): Promise<Offer[]>
 }
 
 /** Token de injeção DI para IOfferRepository */

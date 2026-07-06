@@ -51,6 +51,11 @@ export class OffersGateway implements OnModuleInit {
     this.server.to(this.merchantRoom(offer.merchantId)).emit('offer:updated', offer)
   }
 
+  /** Notifica o namespace inteiro (feed do shopper) quando uma offer é encerrada ou expira — mesmo alcance de `notifyOfferCreated`. */
+  notifyOfferStatusChanged(offer: OfferResponseDto): void {
+    this.server.emit('offer:status-changed', offer)
+  }
+
   private async handleInterestChanged(offerId: string): Promise<void> {
     const offer = await this.offerRepository.findById(offerId)
     if (!offer) return

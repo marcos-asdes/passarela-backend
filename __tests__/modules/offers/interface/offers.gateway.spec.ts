@@ -6,6 +6,7 @@
  * - handleMerchantSubscribe: coloca o socket na sala do merchant informado
  * - handleMerchantSubscribe: não faz nada quando o payload não traz merchantId
  * - notifyOfferUpdated emite 'offer:updated' só pra sala do merchant dono da offer
+ * - notifyOfferStatusChanged emite 'offer:status-changed' com o payload da offer pro namespace inteiro
  * - onModuleInit: ao receber 'interest:changed', emite 'offer:interest-changed' pra sala do merchant com a contagem atualizada
  * - onModuleInit: ao receber 'interest:changed' de uma offer inexistente, não emite nada
  */
@@ -97,6 +98,15 @@ describe('OffersGateway', () => {
 
     expect(to).toHaveBeenCalledWith('merchant:merchant-1')
     expect(emit).toHaveBeenCalledWith('offer:updated', dto)
+  })
+
+  it("notifyOfferStatusChanged emite 'offer:status-changed' com o payload da offer", () => {
+    const dto = new OfferResponseDto()
+    dto.id = 'offer-1'
+
+    gateway.notifyOfferStatusChanged(dto)
+
+    expect(emit).toHaveBeenCalledWith('offer:status-changed', dto)
   })
 
   describe('onModuleInit', () => {

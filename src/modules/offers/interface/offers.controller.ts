@@ -87,6 +87,7 @@ export class OffersController {
       const offer = await this.closeOfferUseCase.execute({ id, merchantId: user.id })
       const responseDto = OfferResponseDto.fromEntity(offer)
       this.offersGateway.notifyOfferUpdated(responseDto)
+      this.offersGateway.notifyOfferStatusChanged(responseDto)
       return responseDto
     } catch (error) {
       throw this.mapDomainError(error)
