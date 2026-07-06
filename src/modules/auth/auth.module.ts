@@ -1,5 +1,7 @@
 import { GetAuthenticatedUserUseCase } from '@auth/application/get-authenticated-user.use-case'
+import { GetProfileUseCase } from '@auth/application/get-profile.use-case'
 import { LoginUseCase } from '@auth/application/login.use-case'
+import { LogoutUseCase } from '@auth/application/logout.use-case'
 import { RegisterUseCase } from '@auth/application/register.use-case'
 import { PASSWORD_HASHER, SESSION_REPOSITORY, TOKEN_SERVICE, USER_REPOSITORY } from '@auth/application/types'
 import { Argon2PasswordHasherService } from '@auth/infrastructure/argon2-password-hasher.service'
@@ -40,7 +42,9 @@ import { PassportModule } from '@nestjs/passport'
   providers: [
     RegisterUseCase,
     LoginUseCase,
+    LogoutUseCase,
     GetAuthenticatedUserUseCase,
+    GetProfileUseCase,
     JwtStrategy,
     { provide: USER_REPOSITORY, useClass: UserRepository },
     { provide: SESSION_REPOSITORY, useClass: SessionRepository },

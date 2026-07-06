@@ -13,3 +13,9 @@ export interface ILoginResponse {
     role: UserRole
   }
 }
+
+/** Corpo de resposta de GET /auth/me — nome/e-mail do próprio usuário autenticado, pro header da UI */
+export interface IProfileResponse {
+  name: string
+  email: string
+}

@@ -2,7 +2,7 @@
  * Testes unitários para GetAuthenticatedUserUseCase
  *
  * Cenários testados:
- * - Retorna { id, role } quando a sessão está ativa e o usuário existe
+ * - Retorna { id, role, sessionId } quando a sessão está ativa e o usuário existe
  * - Retorna null quando a sessão não existe/foi revogada/expirou (findActiveById retorna null)
  * - Retorna null quando o usuário do token não existe mais, mesmo com sessão válida
  * - Retorna null quando o userId da sessão não bate com o sub do payload
@@ -48,13 +48,13 @@ describe('GetAuthenticatedUserUseCase', () => {
     useCase = new GetAuthenticatedUserUseCase(userRepository, sessionRepository)
   })
 
-  it('retorna { id, role } quando a sessão está ativa e o usuário existe', async () => {
+  it('retorna { id, role, sessionId } quando a sessão está ativa e o usuário existe', async () => {
     sessionRepository.findActiveById.mockResolvedValue(activeSession)
     userRepository.findById.mockResolvedValue(user)
 
     const result = await useCase.execute(payload)
 
-    expect(result).toEqual({ id: 'user-1', role: UserRole.Merchant })
+    expect(result).toEqual({ id: 'user-1', role: UserRole.Merchant, sessionId: 'session-1' })
   })
 
   it('retorna null quando a sessão não existe/foi revogada/expirou', async () => {

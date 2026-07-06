@@ -70,6 +70,14 @@ export const TOKEN_SERVICE = Symbol('TOKEN_SERVICE')
 export interface IAuthenticatedUser {
   id: string
   role: UserRole
+  /** Id da sessão validada (= jti do JWT) — usado pelo logout pra revogar exatamente essa sessão */
+  sessionId: string
+}
+
+/** Resultado do perfil do usuário autenticado — nome/e-mail, só devolvido no endpoint dedicado GET /auth/me */
+export interface IProfileResult {
+  name: string
+  email: string
 }
 
 /** Entrada do caso de uso de registro — sem confirmPassword (validado só no DTO) */

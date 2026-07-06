@@ -31,6 +31,6 @@ export class GetAuthenticatedUserUseCase {
       return null
     }
 
-    return { id: user.id, role: user.role }
+    return { id: user.id, role: user.role, sessionId: session.id }
   }
 }
