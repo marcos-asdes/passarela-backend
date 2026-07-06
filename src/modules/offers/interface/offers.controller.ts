@@ -85,7 +85,9 @@ export class OffersController {
   async close(@CurrentUser() user: IAuthenticatedUser, @Param('id') id: string): Promise<OfferResponseDto> {
     try {
       const offer = await this.closeOfferUseCase.execute({ id, merchantId: user.id })
-      return OfferResponseDto.fromEntity(offer)
+      const responseDto = OfferResponseDto.fromEntity(offer)
+      this.offersGateway.notifyOfferUpdated(responseDto)
+      return responseDto
     } catch (error) {
       throw this.mapDomainError(error)
     }

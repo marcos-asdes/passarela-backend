@@ -7,6 +7,7 @@ import { AllExceptionsFilter } from '@shared/filters/all-exceptions.filter'
 import { RequestLoggingInterceptor } from '@shared/interceptors/request-logging.interceptor'
 import { AppLoggerService } from '@shared/logger/app-logger.service'
 import { createPinoInstance } from '@shared/logger/pino-instance'
+import { DomainEventsService } from '@shared/realtime/domain-events.service'
 import { PINO_LOGGER } from '@shared/types'
 
 /** Kernel compartilhado global: logging, rate limiting e filtro de exceções registrados via token (permite DI) */
@@ -31,10 +32,11 @@ import { PINO_LOGGER } from '@shared/types'
         createPinoInstance(configService.get('NODE_ENV', { infer: true }))
     },
     AppLoggerService,
+    DomainEventsService,
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_INTERCEPTOR, useClass: RequestLoggingInterceptor }
   ],
-  exports: [AppLoggerService]
+  exports: [AppLoggerService, DomainEventsService]
 })
 export class SharedModule {}

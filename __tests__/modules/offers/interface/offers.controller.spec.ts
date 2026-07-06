@@ -7,7 +7,7 @@
  * - update: converte OfferNotFoundError em NotFoundException
  * - update: converte OfferNotOwnedError em ForbiddenException
  * - update: converte OfferAlreadyClosedError em ConflictException
- * - close: retorna o DTO de resposta em caso de sucesso
+ * - close: retorna o DTO de resposta, notifica o gateway (só sala do merchant) em caso de sucesso
  * - close: converte erros de domínio nas mesmas exceptions HTTP que update
  * - findMine: mapeia os resultados pro DTO com interestCount
  * - findPublic: usa Active como default quando a query não informa status
@@ -61,7 +61,10 @@ describe('OffersController', () => {
     closeOfferUseCase = { execute: jest.fn() } as unknown as jest.Mocked<CloseOfferUseCase>
     listMerchantOffersUseCase = { execute: jest.fn() } as unknown as jest.Mocked<ListMerchantOffersUseCase>
     listPublicFeedUseCase = { execute: jest.fn() } as unknown as jest.Mocked<ListPublicFeedUseCase>
-    offersGateway = { notifyOfferCreated: jest.fn() } as unknown as jest.Mocked<OffersGateway>
+    offersGateway = {
+      notifyOfferCreated: jest.fn(),
+      notifyOfferUpdated: jest.fn()
+    } as unknown as jest.Mocked<OffersGateway>
     controller = new OffersController(
       createOfferUseCase,
       updateOfferUseCase,
@@ -113,12 +116,13 @@ describe('OffersController', () => {
   })
 
   describe('close', () => {
-    it('retorna o DTO de resposta em caso de sucesso', async () => {
+    it('retorna o DTO de resposta e notifica o gateway em caso de sucesso', async () => {
       closeOfferUseCase.execute.mockResolvedValue(buildOffer({ status: OfferStatus.Closed }))
 
       const result = await controller.close(user, 'offer-1')
 
       expect(result.status).toBe(OfferStatus.Closed)
+      expect(offersGateway.notifyOfferUpdated).toHaveBeenCalledWith(result)
     })
 
     it.each([

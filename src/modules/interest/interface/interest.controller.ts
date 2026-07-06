@@ -35,6 +35,7 @@ import {
   ApiOperation,
   ApiTags
 } from '@nestjs/swagger'
+import { DomainEventsService } from '@shared/realtime/domain-events.service'
 
 /** Endpoint de interest — shopper registra/remove interesse numa offer, decrementando/incrementando o estoque */
 @ApiTags('interest')
@@ -43,7 +44,8 @@ export class InterestController {
   constructor(
     private readonly registerInterestUseCase: RegisterInterestUseCase,
     private readonly removeInterestUseCase: RemoveInterestUseCase,
-    @Inject(INTEREST_REPOSITORY) private readonly interestRepository: IInterestRepository
+    @Inject(INTEREST_REPOSITORY) private readonly interestRepository: IInterestRepository,
+    private readonly domainEvents: DomainEventsService
   ) {}
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -59,6 +61,7 @@ export class InterestController {
   ): Promise<RegisterInterestResponseDto> {
     try {
       const interest = await this.registerInterestUseCase.execute({ offerId: dto.offerId, shopperId: user.id })
+      this.domainEvents.emit('interest:changed', { offerId: dto.offerId })
       const responseDto = new RegisterInterestResponseDto()
       responseDto.id = interest.id
       return responseDto
@@ -93,6 +96,7 @@ export class InterestController {
   async remove(@CurrentUser() user: IAuthenticatedUser, @Param('offerId') offerId: string): Promise<void> {
     try {
       await this.removeInterestUseCase.execute({ offerId, shopperId: user.id })
+      this.domainEvents.emit('interest:changed', { offerId })
     } catch (error) {
       if (error instanceof InterestNotFoundError) throw new NotFoundException(error.message)
       throw error
