@@ -1,4 +1,6 @@
-# Passarela — backend
+<p align="center">
+  <img src="docs/logo.png" alt="Passarela" width="360" />
+</p>
 
 API de uma plataforma onde **merchants** de um shopping publicam flash deals e **shoppers** acompanham em tempo real as promoções ativas, podendo registrar interesse. Projeto desenvolvido em resposta a um desafio técnico para vaga de desenvolvedor fullstack pleno.
 
@@ -29,45 +31,15 @@ Organização em **Domain-Driven Design** com três bounded contexts independent
 | Testes | Jest + `@swc/jest` |
 | Containerização | Docker + Docker Compose
 
-## Rotas da API
+## Documentação da API
 
-### Auth
+A lista de rotas muda com frequência conforme o desafio evolui — em vez de manter (e desatualizar) uma
+tabela aqui, a documentação sempre atual é o Swagger gerado a partir do código:
 
-| Método | Rota | Autenticação | Descrição |
-|---|---|---|---|
-| `POST` | `/auth/register` | — | Cria conta (`merchant` ou `shopper`) |
-| `POST` | `/auth/login` | — | Autentica e retorna o JWT |
-| `POST` | `/auth/logout` | JWT | Revoga a sessão atual |
+**[passarela-mplan-api.duckdns.org/docs](https://passarela-mplan-api.duckdns.org/docs)**
 
-### Offers
-
-| Método | Rota | Autenticação | Descrição |
-|---|---|---|---|
-| `POST` | `/offers` | JWT (merchant) | Publica uma offer — dispara evento `offer:created` no WebSocket |
-| `GET` | `/offers` | — | Feed público; aceita `?status=active\|closed\|expired` |
-| `GET` | `/offers/mine` | JWT (merchant) | Dashboard: offers próprias com contagem de interesse |
-| `PATCH` | `/offers/:id` | JWT (merchant) | Edita uma offer própria (apenas enquanto `active`) |
-| `POST` | `/offers/:id/close` | JWT (merchant) | Encerra manualmente uma offer própria |
-
-### Interest
-
-| Método | Rota | Autenticação | Descrição |
-|---|---|---|---|
-| `POST` | `/interest` | JWT (shopper) | Registra interesse em uma offer; decrementa estoque atomicamente |
-
-### WebSocket
-
-| Namespace | Evento | Direção | Descrição |
-|---|---|---|---|
-| `/offers` | `offer:created` | servidor → cliente | Emitido a cada nova offer publicada por qualquer merchant |
-
-### Documentação interativa
-
-```
-GET /docs
-```
-
-Swagger UI com todos os endpoints, schemas de request/response e autenticação Bearer integrada.
+Rodando localmente, a mesma UI fica em `http://localhost:3000/docs` — todos os endpoints, schemas de
+request/response e autenticação Bearer integrada.
 
 ## Como Rodar (Docker — preferencial)
 
