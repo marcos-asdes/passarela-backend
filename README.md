@@ -16,6 +16,34 @@ Organização em **Domain-Driven Design** com três bounded contexts independent
 - **offers** — CRUD de ofertas pelo merchant, listagem pública com filtro por status, expiração automática via cron (`@nestjs/schedule`, a cada minuto)
 - **interest** — shopper registra interesse, estoque decrementado atomicamente no Mongo (`findOneAndUpdate` condicional — evita oversell sob concorrência)
 
+## Além do Desafio
+
+Pontos implementados além do escopo mínimo do desafio:
+
+### Controle de sessão
+
+- Cada login grava uma sessão no Mongo; o JWT carrega o id dela (`jti`). Sessão revogada ou usuário excluído derruba o acesso já na próxima request, não só na expiração natural do token.
+- `POST /auth/logout` revoga a sessão — o mesmo token vira `401` na hora.
+- Tempo de vida configurável (`JWT_EXPIRES_IN`); sessões expiradas são limpas sozinhas por índice TTL do Mongo, sem cron manual.
+
+### Camadas de segurança
+
+- Hash de senha **argon2id** nos parâmetros mínimos recomendados pela OWASP, com defesa contra timing attack no login (comparação contra hash-dummy quando o e-mail não existe).
+- JWT com algoritmo fixo (`HS256`) e payload validado globalmente (`ValidationPipe` com whitelist de campos).
+- Rate limiting global, mais um limite extra restrito em `/auth/register` e `/auth/login`.
+- Helmet, CORS restrito à origem configurada, filtro de exceção que nunca expõe stack trace ao cliente.
+- Log estruturado com sanitização: senha, CPF, telefone e token de autenticação nunca aparecem no log.
+- Validação de variáveis de ambiente no boot — a aplicação não sobe com config insegura ou faltante.
+
+### Arquitetura e design patterns
+
+- DDD com bounded contexts (`auth`/`offers`/`interest`), 4 camadas cada (domain/application/infrastructure/interface), dependência sempre numa direção.
+- Inversão de dependência via injeção por token — troca de banco ou serviço não tocaria nenhum caso de uso.
+- Comunicação entre contexts por evento de domínio, não por import direto — mantém os módulos independentes entre si.
+- WebSocket (Socket.IO) por namespace + room — notificação dirigida a quem interessa, não broadcast geral.
+- Expiração de ofertas por job agendado (`@nestjs/schedule`), fora do ciclo de request HTTP.
+- Kernel compartilhado (`SharedModule`) centraliza logger, rate limit e filtro de exceção.
+
 ## Stack Tecnológica
 
 | Camada | Tecnologias |
