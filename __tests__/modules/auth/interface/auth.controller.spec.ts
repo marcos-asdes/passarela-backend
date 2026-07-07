@@ -51,7 +51,7 @@ describe('AuthController', () => {
     role: UserRole.Merchant
   }
 
-  const loginDto: LoginDto = { email: 'fulano@example.com', password: 'Senha@Forte123' }
+  const loginDto: LoginDto = { email: 'fulano@example.com', password: 'Senha@Forte123', role: UserRole.Merchant }
 
   const authenticatedUser: IAuthenticatedUser = { id: 'user-1', role: UserRole.Merchant, sessionId: 'session-1' }
 
@@ -129,6 +129,11 @@ describe('AuthController', () => {
 
       const result = await controller.login(loginDto)
 
+      expect(loginUseCase.execute).toHaveBeenCalledWith({
+        email: loginDto.email,
+        password: loginDto.password,
+        role: loginDto.role
+      })
       expect(result).toEqual({
         accessToken: 'signed-token',
         user: { id: 'user-1', role: UserRole.Merchant }

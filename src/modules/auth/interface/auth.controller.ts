@@ -97,7 +97,7 @@ export class AuthController {
   })
   async login(@Body() dto: LoginDto): Promise<LoginResponseDto> {
     try {
-      const result = await this.loginUseCase.execute({ email: dto.email, password: dto.password })
+      const result = await this.loginUseCase.execute({ email: dto.email, password: dto.password, role: dto.role })
       this.logger.log(`Login realizado (id: ${result.user.id}, role: ${result.user.role})`, 'AuthController')
       return this.toLoginResponseDto(result)
     } catch (error) {

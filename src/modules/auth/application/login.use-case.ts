@@ -35,7 +35,7 @@ export class LoginUseCase {
 
   async execute(input: ILoginInput): Promise<ILoginResult> {
     const email = User.normalizeEmail(input.email)
-    const user = await this.userRepository.findByEmail(email)
+    const user = await this.userRepository.findByEmailAndRole(email, input.role)
 
     // user?.passwordHash cobre tanto "usuário não encontrado" quanto "conta OAuth-only sem senha local" —
     // os dois casos comparam contra o hash-dummy e caem no mesmo erro genérico abaixo.

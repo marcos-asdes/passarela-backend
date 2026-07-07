@@ -29,7 +29,13 @@ describe('GetProfileUseCase', () => {
   })
 
   beforeEach(() => {
-    userRepository = { create: jest.fn(), findByEmail: jest.fn(), findById: jest.fn() }
+    userRepository = {
+      create: jest.fn(),
+      findByEmail: jest.fn(),
+      findByEmailAndRole: jest.fn(),
+      findByCpfAndRole: jest.fn(),
+      findById: jest.fn()
+    }
     useCase = new GetProfileUseCase(userRepository)
   })
 

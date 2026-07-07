@@ -7,7 +7,7 @@
  * - Normaliza email para lowercase e aplica trim em name/email
  * - authProviders assume default [] quando não informado
  * - role rejeita valor fora do enum UserRole
- * - Índices únicos configurados para email, cpf e authProviders (provider+providerId, sparse)
+ * - Índice composto único (cpf, role); email não é único sozinho; authProviders (provider+providerId) único e sparse
  * - timestamps automáticos (createdAt/updatedAt) habilitados
  * - Instancia UserSchemaClass diretamente (SchemaFactory.createForClass só lê metadata via reflection,
  *   nunca chama `new`, e sem isso as atribuições dos campos decorados nunca rodam do ponto de vista do
@@ -73,13 +73,13 @@ describe('UserSchema', () => {
     await expect(doc.validate()).rejects.toMatchObject({ errors: expect.objectContaining({ role: expect.anything() }) })
   })
 
-  it('configura índices únicos para email, cpf e authProviders (provider+providerId, sparse)', () => {
+  it('configura índice composto único (cpf, role) e índice não-único de email', () => {
     const indexes = UserSchema.indexes()
 
     expect(indexes).toEqual(
       expect.arrayContaining([
-        [{ email: 1 }, expect.objectContaining({ unique: true })],
-        [{ cpf: 1 }, expect.objectContaining({ unique: true })],
+        [{ email: 1 }, expect.not.objectContaining({ unique: true })],
+        [{ cpf: 1, role: 1 }, expect.objectContaining({ unique: true, name: 'cpf_role_unique' })],
         [
           { 'authProviders.provider': 1, 'authProviders.providerId': 1 },
           expect.objectContaining({ unique: true, sparse: true })

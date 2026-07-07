@@ -17,6 +17,10 @@ export interface ICreateUserData {
 export interface IUserRepository {
   create(data: ICreateUserData): Promise<User>
   findByEmail(email: string): Promise<User | null>
+  /** Usada pelo login — um e-mail pode ter conta em mais de um papel, login sempre escopado a um só. */
+  findByEmailAndRole(email: string, role: UserRole): Promise<User | null>
+  /** Usada pelo registro — um CPF pode ter no máximo uma conta por papel. */
+  findByCpfAndRole(cpf: string, role: UserRole): Promise<User | null>
   findById(id: string): Promise<User | null>
 }
 
@@ -101,6 +105,7 @@ export interface IRegisterResult {
 export interface ILoginInput {
   email: string
   password: string
+  role: UserRole
 }
 
 /** Resultado do login — token + id/role do usuário (mesmos dados assinados no JWT, nunca nome/e-mail/CPF) */

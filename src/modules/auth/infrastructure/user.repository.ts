@@ -1,7 +1,7 @@
 import { ICreateUserData, IUserRepository } from '@auth/application/types'
 import { CpfAlreadyRegisteredError } from '@auth/domain/cpf-already-registered.error'
-import { EmailAlreadyRegisteredError } from '@auth/domain/email-already-registered.error'
 import { User } from '@auth/domain/user.entity'
+import { UserRole } from '@auth/domain/types'
 import { UserDocument } from '@auth/infrastructure/types'
 import { UserSchemaClass } from '@auth/infrastructure/user.schema'
 import { Injectable } from '@nestjs/common'
@@ -27,11 +27,11 @@ export class UserRepository implements IUserRepository {
       })
       return this.toDomainEntity(document)
     } catch (error) {
+      // Único índice único restante é o composto (cpf, role) — RegisterUseCase já faz o pre-check
+      // de negócio antes de chamar create(), isso aqui é só rede de segurança pra corrida entre
+      // requests concorrentes com o mesmo cpf+role.
       if (isDuplicateKeyError(error)) {
-        if (error.keyPattern && 'cpf' in error.keyPattern) {
-          throw new CpfAlreadyRegisteredError()
-        }
-        throw new EmailAlreadyRegisteredError()
+        throw new CpfAlreadyRegisteredError()
       }
       throw error
     }
@@ -39,6 +39,16 @@ export class UserRepository implements IUserRepository {
 
   async findByEmail(email: string): Promise<User | null> {
     const document = await this.userModel.findOne({ email }).exec()
+    return document ? this.toDomainEntity(document) : null
+  }
+
+  async findByEmailAndRole(email: string, role: UserRole): Promise<User | null> {
+    const document = await this.userModel.findOne({ email, role }).exec()
+    return document ? this.toDomainEntity(document) : null
+  }
+
+  async findByCpfAndRole(cpf: string, role: UserRole): Promise<User | null> {
+    const document = await this.userModel.findOne({ cpf, role }).exec()
     return document ? this.toDomainEntity(document) : null
   }
 

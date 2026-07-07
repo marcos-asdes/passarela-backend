@@ -43,7 +43,13 @@ describe('GetAuthenticatedUserUseCase', () => {
   })
 
   beforeEach(() => {
-    userRepository = { create: jest.fn(), findByEmail: jest.fn(), findById: jest.fn() }
+    userRepository = {
+      create: jest.fn(),
+      findByEmail: jest.fn(),
+      findByEmailAndRole: jest.fn(),
+      findByCpfAndRole: jest.fn(),
+      findById: jest.fn()
+    }
     sessionRepository = { create: jest.fn(), findActiveById: jest.fn(), revoke: jest.fn() }
     useCase = new GetAuthenticatedUserUseCase(userRepository, sessionRepository)
   })

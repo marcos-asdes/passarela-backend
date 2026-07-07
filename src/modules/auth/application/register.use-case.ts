@@ -1,6 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common'
 import { normalizeCPF } from '@auth/domain/cpf'
 import { capitalizeName } from '@auth/domain/name'
+import { CpfAlreadyRegisteredError } from '@auth/domain/cpf-already-registered.error'
+import { EmailAlreadyRegisteredError } from '@auth/domain/email-already-registered.error'
 import { User } from '@auth/domain/user.entity'
 import {
   ICreateUserData,
@@ -25,6 +27,19 @@ export class RegisterUseCase {
     const email = User.normalizeEmail(input.email)
     const cpf = normalizeCPF(input.cpf)
     const phone = User.normalizePhone(input.phone)
+
+    // Um CPF pode ter uma conta merchant e uma conta shopper, nunca duas do mesmo papel.
+    const existingCpfRole = await this.userRepository.findByCpfAndRole(cpf, input.role)
+    if (existingCpfRole) {
+      throw new CpfAlreadyRegisteredError()
+    }
+
+    // E-mail pode repetir entre as duas contas do MESMO cpf, mas nunca pertencer a um cpf diferente.
+    const existingEmail = await this.userRepository.findByEmail(email)
+    if (existingEmail && existingEmail.cpf !== cpf) {
+      throw new EmailAlreadyRegisteredError()
+    }
+
     const passwordHash = await this.passwordHasher.hash(input.password)
 
     const data: ICreateUserData = {

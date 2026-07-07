@@ -31,7 +31,7 @@ describe('LoginUseCase', () => {
   let sessionRepository: jest.Mocked<ISessionRepository>
   let useCase: LoginUseCase
 
-  const input: ILoginInput = { email: '  Fulano@Example.COM  ', password: 'Senha@Forte123' }
+  const input: ILoginInput = { email: '  Fulano@Example.COM  ', password: 'Senha@Forte123', role: UserRole.Shopper }
 
   const buildUser = (overrides: Partial<{ passwordHash?: string }> = {}) =>
     new User({
@@ -49,7 +49,13 @@ describe('LoginUseCase', () => {
     })
 
   beforeEach(() => {
-    userRepository = { create: jest.fn(), findByEmail: jest.fn(), findById: jest.fn() }
+    userRepository = {
+      create: jest.fn(),
+      findByEmail: jest.fn(),
+      findByEmailAndRole: jest.fn(),
+      findByCpfAndRole: jest.fn(),
+      findById: jest.fn()
+    }
     passwordHasher = { hash: jest.fn(), compare: jest.fn() }
     tokenService = { sign: jest.fn().mockReturnValue('signed-token'), computeExpiresAt: jest.fn() }
     sessionRepository = { create: jest.fn(), findActiveById: jest.fn(), revoke: jest.fn() }
@@ -57,7 +63,7 @@ describe('LoginUseCase', () => {
   })
 
   it('normaliza o e-mail antes de buscar o usuário', async () => {
-    userRepository.findByEmail.mockResolvedValue(buildUser())
+    userRepository.findByEmailAndRole.mockResolvedValue(buildUser())
     passwordHasher.compare.mockResolvedValue(true)
     tokenService.computeExpiresAt.mockReturnValue(new Date())
     sessionRepository.create.mockResolvedValue(
@@ -66,12 +72,12 @@ describe('LoginUseCase', () => {
 
     await useCase.execute(input)
 
-    expect(userRepository.findByEmail).toHaveBeenCalledWith('fulano@example.com')
+    expect(userRepository.findByEmailAndRole).toHaveBeenCalledWith('fulano@example.com', UserRole.Shopper)
   })
 
   it('em caso de sucesso, cria uma sessão e retorna accessToken + id/role (nunca nome/e-mail)', async () => {
     const user = buildUser()
-    userRepository.findByEmail.mockResolvedValue(user)
+    userRepository.findByEmailAndRole.mockResolvedValue(user)
     passwordHasher.compare.mockResolvedValue(true)
     tokenService.computeExpiresAt.mockReturnValue(new Date())
     sessionRepository.create.mockResolvedValue(
@@ -88,7 +94,7 @@ describe('LoginUseCase', () => {
   })
 
   it('o jti assinado no token corresponde ao id da sessão criada', async () => {
-    userRepository.findByEmail.mockResolvedValue(buildUser())
+    userRepository.findByEmailAndRole.mockResolvedValue(buildUser())
     passwordHasher.compare.mockResolvedValue(true)
     tokenService.computeExpiresAt.mockReturnValue(new Date())
     sessionRepository.create.mockResolvedValue(
@@ -107,7 +113,7 @@ describe('LoginUseCase', () => {
   })
 
   it('lança InvalidCredentialsError quando o e-mail não existe', async () => {
-    userRepository.findByEmail.mockResolvedValue(null)
+    userRepository.findByEmailAndRole.mockResolvedValue(null)
     passwordHasher.compare.mockResolvedValue(false)
 
     await expect(useCase.execute(input)).rejects.toBeInstanceOf(InvalidCredentialsError)
@@ -115,7 +121,7 @@ describe('LoginUseCase', () => {
   })
 
   it('lança InvalidCredentialsError quando a senha está incorreta', async () => {
-    userRepository.findByEmail.mockResolvedValue(buildUser())
+    userRepository.findByEmailAndRole.mockResolvedValue(buildUser())
     passwordHasher.compare.mockResolvedValue(false)
 
     await expect(useCase.execute(input)).rejects.toBeInstanceOf(InvalidCredentialsError)
@@ -123,7 +129,7 @@ describe('LoginUseCase', () => {
   })
 
   it('lança InvalidCredentialsError quando a conta não tem senha local (OAuth-only)', async () => {
-    userRepository.findByEmail.mockResolvedValue(buildUser({ passwordHash: undefined }))
+    userRepository.findByEmailAndRole.mockResolvedValue(buildUser({ passwordHash: undefined }))
     passwordHasher.compare.mockResolvedValue(false)
 
     await expect(useCase.execute(input)).rejects.toBeInstanceOf(InvalidCredentialsError)

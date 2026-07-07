@@ -3,11 +3,14 @@
  *
  * Cenários testados:
  * - create() traduz o documento criado em User
- * - create() traduz erro de chave duplicada (code 11000) em email → EmailAlreadyRegisteredError
- * - create() traduz erro de chave duplicada (code 11000) em cpf → CpfAlreadyRegisteredError
+ * - create() traduz erro de chave duplicada (code 11000, índice composto cpf+role) → CpfAlreadyRegisteredError
  * - create() propaga qualquer outro erro do Mongo sem alterá-lo
  * - findByEmail() retorna null quando não encontra
  * - findByEmail() traduz o documento encontrado em User
+ * - findByEmailAndRole() busca por email + role e traduz o documento encontrado em User
+ * - findByEmailAndRole() retorna null quando não encontra
+ * - findByCpfAndRole() busca por cpf + role e traduz o documento encontrado em User
+ * - findByCpfAndRole() retorna null quando não encontra
  * - findById() retorna null quando não encontra
  * - findById() retorna null (não deixa vazar) quando o id tem formato de ObjectId inválido
  * - findById() traduz o documento encontrado em User
@@ -15,7 +18,6 @@
 
 import { Model } from 'mongoose'
 import { CpfAlreadyRegisteredError } from '@auth/domain/cpf-already-registered.error'
-import { EmailAlreadyRegisteredError } from '@auth/domain/email-already-registered.error'
 import { UserRole } from '@auth/domain/types'
 import { ICreateUserData } from '@auth/application/types'
 import { UserDocument } from '@auth/infrastructure/types'
@@ -70,14 +72,8 @@ describe('UserRepository', () => {
       expect(user.email).toBe('fulano@example.com')
     })
 
-    it('traduz erro de chave duplicada em email para EmailAlreadyRegisteredError', async () => {
-      userModel.create.mockRejectedValue({ code: 11000, keyPattern: { email: 1 } })
-
-      await expect(repository.create(createData)).rejects.toBeInstanceOf(EmailAlreadyRegisteredError)
-    })
-
-    it('traduz erro de chave duplicada em cpf para CpfAlreadyRegisteredError', async () => {
-      userModel.create.mockRejectedValue({ code: 11000, keyPattern: { cpf: 1 } })
+    it('traduz erro de chave duplicada (índice composto cpf+role) para CpfAlreadyRegisteredError', async () => {
+      userModel.create.mockRejectedValue({ code: 11000, keyPattern: { cpf: 1, role: 1 } })
 
       await expect(repository.create(createData)).rejects.toBeInstanceOf(CpfAlreadyRegisteredError)
     })
@@ -105,6 +101,46 @@ describe('UserRepository', () => {
       const user = await repository.findByEmail('fulano@example.com')
 
       expect(user?.email).toBe('fulano@example.com')
+    })
+  })
+
+  describe('findByEmailAndRole', () => {
+    it('busca por email + role e traduz o documento encontrado em User', async () => {
+      const exec = jest.fn().mockResolvedValue(buildDocument())
+      userModel.findOne.mockReturnValue({ exec } as never)
+
+      const user = await repository.findByEmailAndRole('fulano@example.com', UserRole.Merchant)
+
+      expect(userModel.findOne).toHaveBeenCalledWith({ email: 'fulano@example.com', role: UserRole.Merchant })
+      expect(user?.email).toBe('fulano@example.com')
+    })
+
+    it('retorna null quando não encontra', async () => {
+      userModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) } as never)
+
+      const user = await repository.findByEmailAndRole('inexistente@example.com', UserRole.Shopper)
+
+      expect(user).toBeNull()
+    })
+  })
+
+  describe('findByCpfAndRole', () => {
+    it('busca por cpf + role e traduz o documento encontrado em User', async () => {
+      const exec = jest.fn().mockResolvedValue(buildDocument())
+      userModel.findOne.mockReturnValue({ exec } as never)
+
+      const user = await repository.findByCpfAndRole('52998224725', UserRole.Merchant)
+
+      expect(userModel.findOne).toHaveBeenCalledWith({ cpf: '52998224725', role: UserRole.Merchant })
+      expect(user?.id).toBe('user-1')
+    })
+
+    it('retorna null quando não encontra', async () => {
+      userModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) } as never)
+
+      const user = await repository.findByCpfAndRole('00000000000', UserRole.Shopper)
+
+      expect(user).toBeNull()
     })
   })
 

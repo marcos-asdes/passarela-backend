@@ -6,8 +6,10 @@
  * - Normaliza e-mail, CPF e telefone antes de persistir
  * - Faz hash da senha antes de enviar ao repositório (nunca persiste texto puro)
  * - Retorna só id e role (nunca nome/e-mail/senha)
- * - Propaga EmailAlreadyRegisteredError lançado pelo repositório, sem mascará-lo
- * - Propaga CpfAlreadyRegisteredError lançado pelo repositório, sem mascará-lo
+ * - Lança CpfAlreadyRegisteredError quando já existe conta com o mesmo cpf+role, sem chamar create()
+ * - Lança EmailAlreadyRegisteredError quando o e-mail já pertence a um cpf diferente, sem chamar create()
+ * - Permite e-mail repetido quando pertence ao mesmo cpf (papel diferente)
+ * - Propaga CpfAlreadyRegisteredError lançado pelo repositório (corrida entre requests concorrentes)
  */
 
 import { EmailAlreadyRegisteredError } from '@auth/domain/email-already-registered.error'
@@ -35,7 +37,9 @@ describe('RegisterUseCase', () => {
   beforeEach(() => {
     userRepository = {
       create: jest.fn(),
-      findByEmail: jest.fn(),
+      findByEmail: jest.fn().mockResolvedValue(null),
+      findByEmailAndRole: jest.fn(),
+      findByCpfAndRole: jest.fn().mockResolvedValue(null),
       findById: jest.fn()
     }
     passwordHasher = {
@@ -136,13 +140,80 @@ describe('RegisterUseCase', () => {
     expect(result).toEqual({ id: 'user-1', role: UserRole.Merchant })
   })
 
-  it('propaga EmailAlreadyRegisteredError lançado pelo repositório', async () => {
-    userRepository.create.mockRejectedValue(new EmailAlreadyRegisteredError())
+  it('lança CpfAlreadyRegisteredError quando já existe conta com o mesmo cpf+role, sem chamar create()', async () => {
+    userRepository.findByCpfAndRole.mockResolvedValue(
+      new User({
+        id: 'user-1',
+        name: 'Fulano',
+        email: 'fulano@example.com',
+        passwordHash: 'hash',
+        cpf: '52998224725',
+        phone: '11912345678',
+        birthDate: input.birthDate,
+        authProviders: [],
+        role: UserRole.Merchant,
+        createdAt: new Date()
+      })
+    )
 
-    await expect(useCase.execute(input)).rejects.toBeInstanceOf(EmailAlreadyRegisteredError)
+    await expect(useCase.execute(input)).rejects.toBeInstanceOf(CpfAlreadyRegisteredError)
+    expect(userRepository.create).not.toHaveBeenCalled()
   })
 
-  it('propaga CpfAlreadyRegisteredError lançado pelo repositório', async () => {
+  it('lança EmailAlreadyRegisteredError quando o e-mail já pertence a um cpf diferente, sem chamar create()', async () => {
+    userRepository.findByEmail.mockResolvedValue(
+      new User({
+        id: 'user-2',
+        name: 'Outra Pessoa',
+        email: 'fulano@example.com',
+        passwordHash: 'hash',
+        cpf: '11111111111',
+        phone: '11912345678',
+        birthDate: input.birthDate,
+        authProviders: [],
+        role: UserRole.Shopper,
+        createdAt: new Date()
+      })
+    )
+
+    await expect(useCase.execute(input)).rejects.toBeInstanceOf(EmailAlreadyRegisteredError)
+    expect(userRepository.create).not.toHaveBeenCalled()
+  })
+
+  it('permite e-mail repetido quando pertence ao mesmo cpf (papel diferente)', async () => {
+    userRepository.findByEmail.mockResolvedValue(
+      new User({
+        id: 'user-3',
+        name: 'Fulano',
+        email: 'fulano@example.com',
+        passwordHash: 'hash',
+        cpf: '52998224725',
+        phone: '11912345678',
+        birthDate: input.birthDate,
+        authProviders: [],
+        role: UserRole.Shopper,
+        createdAt: new Date()
+      })
+    )
+    userRepository.create.mockResolvedValue(
+      new User({
+        id: 'user-4',
+        name: 'Fulano',
+        email: 'fulano@example.com',
+        passwordHash: 'hashed-password',
+        cpf: '52998224725',
+        phone: '11912345678',
+        birthDate: input.birthDate,
+        authProviders: [],
+        role: UserRole.Merchant,
+        createdAt: new Date()
+      })
+    )
+
+    await expect(useCase.execute(input)).resolves.toEqual({ id: 'user-4', role: UserRole.Merchant })
+  })
+
+  it('propaga CpfAlreadyRegisteredError lançado pelo repositório (corrida entre requests concorrentes)', async () => {
     userRepository.create.mockRejectedValue(new CpfAlreadyRegisteredError())
 
     await expect(useCase.execute(input)).rejects.toBeInstanceOf(CpfAlreadyRegisteredError)
